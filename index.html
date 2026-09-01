@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IPPON GP</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Zen+Kaku+Gothic+New:wght@700;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: #f0eaf8;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+header {
+  padding: 12px 24px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 38px;
+  color: #1a0033;
+  letter-spacing: 3px;
+  line-height: 1;
+}
+
+.logo span { color: #cc00ff; }
+
+.tagline {
+  font-size: 10px;
+  color: #999;
+  letter-spacing: 3px;
+  font-weight: 700;
+}
+
+.settings-btn {
+  margin-left: auto;
+  color: #aaa;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  padding: 6px;
+  border-radius: 8px;
+  transition: background 0.15s, color 0.15s;
+}
+.settings-btn:hover {
+  background: rgba(0,0,0,0.08);
+  color: #cc00ff;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 12px;
+  padding: 12px 24px 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+.card {
+  border-radius: 20px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.15s;
+}
+
+.card:hover { transform: scale(1.02); }
+
+.card.main   { background: linear-gradient(145deg, #cc00ff 0%, #7700cc 100%); color: white; }
+.card.host   { background: linear-gradient(145deg, #ff9500 0%, #cc5500 100%); color: white; }
+.card.judge  { background: linear-gradient(145deg, #ffffff 0%, #e8d0ff 100%); color: #1a0033; }
+.card.camera { background: linear-gradient(145deg, #00ddaa 0%, #0099cc 100%); color: white; }
+
+.card-tag {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  opacity: 0.7;
+  margin-bottom: 2px;
+}
+
+.card-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 32px;
+  letter-spacing: 2px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.card-desc {
+  font-size: 10px;
+  opacity: 0.75;
+  line-height: 1.4;
+  font-weight: 700;
+  flex: 1;
+}
+
+.open-btn {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 2px 14px;
+  border-radius: 50px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-decoration: none;
+  transition: opacity 0.15s;
+  width: fit-content;
+}
+.open-btn:hover { opacity: 0.85; }
+
+.card.main   .open-btn { background: rgba(255,255,255,0.25); color: white; }
+.card.host   .open-btn { background: rgba(255,255,255,0.25); color: white; }
+.card.judge  .open-btn { background: #cc00ff; color: white; }
+.card.camera .open-btn { background: rgba(255,255,255,0.25); color: white; }
+
+/* QR */
+.qr-area {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.qr-label {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  opacity: 0.6;
+}
+
+.qr-box {
+  background: white;
+  padding: 6px;
+  border-radius: 10px;
+  display: inline-block;
+}
+
+.qr-box canvas, .qr-box img {
+  display: block;
+  width: 90px !important;
+  height: 90px !important;
+}
+
+/* デコ */
+.card::after {
+  content: '';
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  opacity: 0.15;
+  bottom: -30px;
+  right: -30px;
+}
+.card.main::after   { background: white; }
+.card.host::after   { background: white; }
+.card.judge::after  { background: #cc00ff; }
+.card.camera::after { background: white; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">SONG <span>OGIRI</span> GRAND PRIX</div>
+  <div class="tagline">ADMIN PANEL</div>
+  <a href="https://github.com/ryosuke884884-hash/ippon-gp/upload/main" target="_blank" class="settings-btn" title="ファイルをアップロード">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+  </a>
+</header>
+
+<div class="grid">
+
+  <a class="card main" href="https://ryosuke884884-hash.github.io/ippon-gp/ippon_main_v0_21.html" target="_blank">
+    <div class="card-tag">DISPLAY</div>
+    <div class="card-name">MAIN</div>
+    <div class="card-desc">大画面・プロジェクター用</div>
+    <div class="open-btn">OPEN →</div>
+  </a>
+
+  <a class="card host" href="https://ryosuke884884-hash.github.io/ippon-gp/ippon_host_v0_21.html" target="_blank">
+    <div class="card-tag">CONTROL</div>
+    <div class="card-name">HOST</div>
+    <div class="card-desc">司会・進行操作 PCで開く</div>
+    <div class="open-btn">OPEN →</div>
+  </a>
+
+  <div class="card judge">
+    <div class="card-tag">VOTING</div>
+    <div class="card-name">JUDGE</div>
+    <div class="card-desc">審査員10名 スマホで読み取り</div>
+    <div class="qr-area">
+      <div class="qr-label">QR CODE</div>
+      <div class="qr-box" id="qr-judge"></div>
+    </div>
+    <a class="open-btn" href="https://ryosuke884884-hash.github.io/ippon-gp/ippon_judge_v0_24.html" target="_blank">OPEN →</a>
+  </div>
+
+  <div class="card camera">
+    <div class="card-tag">CAMERA</div>
+    <div class="card-name">CAM</div>
+    <div class="card-desc">スマホカメラをMAINに配信</div>
+    <div class="qr-area">
+      <div class="qr-label">QR CODE</div>
+      <div class="qr-box" id="qr-camera"></div>
+    </div>
+    <a class="open-btn" href="https://ryosuke884884-hash.github.io/ippon-gp/ippon-camera.html" target="_blank">OPEN →</a>
+  </div>
+
+</div>
+
+<script>
+new QRCode(document.getElementById('qr-judge'), {
+  text: 'https://ryosuke884884-hash.github.io/ippon-gp/ippon_judge_v0_24.html',
+  width: 90, height: 90,
+  colorDark: '#1a0033', colorLight: '#ffffff',
+  correctLevel: QRCode.CorrectLevel.M
+});
+new QRCode(document.getElementById('qr-camera'), {
+  text: 'https://ryosuke884884-hash.github.io/ippon-gp/ippon-camera.html',
+  width: 90, height: 90,
+  colorDark: '#003322', colorLight: '#ffffff',
+  correctLevel: QRCode.CorrectLevel.M
+});
+</script>
+</body>
+</html>

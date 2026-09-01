@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>IPPON - カメラ</title>
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; touch-action: manipulation; }
+body { background: #000; height: 100dvh; overflow: hidden; position: relative; }
+
+#video {
+  width: 100%;
+  height: 100dvh;
+  object-fit: cover;
+  display: block;
+}
+
+.overlay-top {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  padding: 16px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.live-badge {
+  background: #e63737;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  letter-spacing: 0.08em;
+  animation: blink 1.5s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+#status {
+  font-size: 12px;
+  color: rgba(255,255,255,0.7);
+  font-family: sans-serif;
+}
+
+.overlay-bottom {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  padding: 24px 16px;
+  background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.ctrl {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: white;
+  border-radius: 50px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-family: sans-serif;
+  cursor: pointer;
+}
+
+#start-screen {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  color: white;
+  font-family: sans-serif;
+}
+
+#start-screen h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.05em; color: #d4a017; }
+#start-screen p { font-size: 13px; color: #888; }
+
+.start-btn {
+  background: white;
+  color: #000;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 40px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: sans-serif;
+}
+</style>
+</head>
+<body>
+
+<div id="start-screen">
+  <h1>IPPON カメラ</h1>
+  <p>カメラ映像をMAIN画面に配信します</p>
+  <button class="start-btn" onclick="startCamera()">📷 カメラを起動</button>
+</div>
+
+<video id="video" autoplay playsinline muted></video>
+
+<div class="overlay-top">
+  <div class="live-badge" id="live-badge" style="display:none;">LIVE</div>
+  <div id="status">接続中…</div>
+</div>
+
+<div class="overlay-bottom">
+  <button class="ctrl" onclick="flipCam()">🔄 カメラ切替</button>
+  <button class="ctrl" style="background:rgba(220,50,50,0.4);border-color:rgba(220,50,50,0.5);" onclick="stopCamera()">⏹ 停止</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getDatabase, ref, set, remove } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC-mISssQxyO67vl3JxbbBktqXoDvmGLdk",
+  authDomain: "song-fes-ippon-gp.firebaseapp.com",
+  databaseURL: "https://song-fes-ippon-gp-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "song-fes-ippon-gp",
+  storageBucket: "song-fes-ippon-gp.firebasestorage.app",
+  messagingSenderId: "727959135173",
+  appId: "1:727959135173:web:5d983f22d1164a11a6e1ac"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let peer = null;
+let stream = null;
+let facing = 'environment';
+let roomId = null;
+
+function genId() {
+  return Math.random().toString(36).substr(2,6).toUpperCase();
+}
+
+window.startCamera = async function() {
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('status').textContent = 'カメラ起動中…';
+
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: facing, width:{ideal:1280}, height:{ideal:720} },
+      audio: false
+    });
+  } catch(e) {
+    document.getElementById('status').textContent = 'カメラ許可が必要です';
+    document.getElementById('start-screen').style.display = 'flex';
+    return;
+  }
+
+  document.getElementById('video').srcObject = stream;
+  document.getElementById('status').textContent = 'サーバー接続中…';
+
+  roomId = genId();
+  peer = new Peer('ippon-host-' + roomId);
+
+  peer.on('open', () => {
+    set(ref(db, 'camera_room'), roomId);
+    document.getElementById('live-badge').style.display = 'block';
+    document.getElementById('status').textContent = 'MAIN画面に配信中';
+  });
+
+  peer.on('connection', dc => {
+    dc.on('data', msg => {
+      if (msg.startsWith('join:')) {
+        const viewerId = msg.replace('join:', '');
+        peer.call(viewerId, stream);
+      }
+    });
+  });
+
+  peer.on('error', e => {
+    if (e.type === 'unavailable-id') {
+      peer.destroy(); peer = null;
+      window.startCamera();
+    } else {
+      document.getElementById('status').textContent = 'エラー: ' + e.type;
+    }
+  });
+};
+
+window.flipCam = async function() {
+  facing = facing === 'environment' ? 'user' : 'environment';
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: facing }, audio: false
+    });
+    document.getElementById('video').srcObject = stream;
+    if (peer) {
+      Object.values(peer.connections).forEach(conns => {
+        conns.forEach(c => {
+          if (c.peerConnection) {
+            c.peerConnection.getSenders().forEach(s => {
+              if (s.track && s.track.kind === 'video')
+                s.replaceTrack(stream.getVideoTracks()[0]);
+            });
+          }
+        });
+      });
+    }
+  } catch(e) {}
+};
+
+window.stopCamera = function() {
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  if (peer) peer.destroy();
+  peer = null; stream = null; roomId = null;
+  remove(ref(db, 'camera_room'));
+  document.getElementById('video').srcObject = null;
+  document.getElementById('live-badge').style.display = 'none';
+  document.getElementById('status').textContent = '';
+  document.getElementById('start-screen').style.display = 'flex';
+};
+</script>
+</body>
+</html>

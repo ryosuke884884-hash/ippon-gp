@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IPPON カメラ</title>
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0a;
+    color: white;
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  #setup {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 32px;
+    text-align: center;
+    width: 100%;
+    max-width: 360px;
+  }
+  h1 { font-size: 26px; font-weight: 700; }
+  .sub { font-size: 13px; color: #666; line-height: 1.6; }
+  .btn {
+    background: white;
+    color: #0a0a0a;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 0;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    width: 100%;
+  }
+  .btn-outline {
+    background: transparent;
+    color: white;
+    border: 1px solid #444;
+    font-size: 15px;
+  }
+  input[type="text"] {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    color: white;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 22px;
+    font-family: inherit;
+    width: 100%;
+    text-align: center;
+    outline: none;
+    letter-spacing: 0.15em;
+    font-weight: 700;
+  }
+  input:focus { border-color: #666; }
+  input::placeholder { color: #555; font-size: 14px; font-weight: 400; letter-spacing: 0; }
+  .divider {
+    color: #444; font-size: 12px;
+    display: flex; align-items: center; gap: 10px; width: 100%;
+  }
+  .divider::before, .divider::after { content:''; flex:1; border-top: 1px solid #333; }
+  #status {
+    font-size: 13px; color: #888; min-height: 18px; text-align: center;
+  }
+  #error {
+    font-size: 13px; color: #e63737; display: none;
+    text-align: center; line-height: 1.5;
+  }
+
+  /* カメラ画面 */
+  #camera-view {
+    display: none; position: relative;
+    width: 100%; height: 100dvh; background: black;
+  }
+  #video { width: 100%; height: 100%; object-fit: cover; }
+  .overlay-top {
+    position: absolute; top: 0; left: 0; right: 0;
+    padding: 20px 16px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .live-badge {
+    background: #e63737; color: white;
+    font-size: 11px; font-weight: 700;
+    padding: 5px 10px; border-radius: 4px;
+    letter-spacing: 0.08em;
+    animation: blink 1.5s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.5} }
+  .room-label {
+    font-size: 11px; color: rgba(255,255,255,0.6);
+  }
+  .room-code {
+    font-size: 22px; font-weight: 700; letter-spacing: 0.2em;
+    background: rgba(0,0,0,0.5); padding: 6px 14px; border-radius: 8px;
+    margin-left: auto;
+  }
+  .overlay-bottom {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 24px 20px;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    display: flex; justify-content: center; gap: 16px;
+  }
+  .ctrl {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white; border-radius: 50px;
+    padding: 10px 22px; font-size: 14px;
+    cursor: pointer; font-family: inherit;
+  }
+  .ctrl.red { background: rgba(220,50,50,0.5); border-color: rgba(220,50,50,0.6); }
+
+  /* 視聴画面 */
+  #viewer-view {
+    display: none; position: relative;
+    width: 100%; height: 100dvh; background: black;
+  }
+  #remote-video { width: 100%; height: 100%; object-fit: contain; }
+  #waiting {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 14px; color: #555;
+  }
+  #waiting-icon { font-size: 52px; }
+  #waiting-text { font-size: 14px; line-height: 1.7; text-align: center; }
+  .viewer-badge {
+    position: absolute; bottom: 20px; right: 16px;
+    background: rgba(0,0,0,0.6); border: 1px solid #333;
+    border-radius: 8px; padding: 6px 12px;
+    font-size: 12px; color: #aaa;
+  }
+</style>
+</head>
+<body>
+
+<div id="setup">
+  <h1>📺 IPPON カメラ</h1>
+  <p class="sub">スマホのカメラをリアルタイムでWebに投影します</p>
+
+  <button class="btn" id="host-btn" onclick="startHost()">📷 カメラを配信する</button>
+
+  <div class="divider">視聴する場合</div>
+
+  <input type="text" id="room-input" placeholder="ルームIDを入力"
+    maxlength="6" oninput="this.value=this.value.toUpperCase()"
+    onkeydown="if(event.key==='Enter')startViewer()">
+  <button class="btn btn-outline" onclick="startViewer()">🖥️ 視聴する</button>
+
+  <div id="status"></div>
+  <div id="error"></div>
+</div>
+
+<div id="camera-view">
+  <video id="video" autoplay playsinline muted></video>
+  <div class="overlay-top">
+    <div class="live-badge">LIVE</div>
+    <div class="room-label">ルームID</div>
+    <div class="room-code" id="room-display">------</div>
+  </div>
+  <div class="overlay-bottom">
+    <button class="ctrl" onclick="flipCam()">🔄 カメラ切替</button>
+    <button class="ctrl red" onclick="stopHost()">⏹ 停止</button>
+  </div>
+</div>
+
+<div id="viewer-view">
+  <video id="remote-video" autoplay playsinline></video>
+  <div id="waiting">
+    <div id="waiting-icon">📡</div>
+    <div id="waiting-text">配信者の接続を待っています…</div>
+  </div>
+  <div class="viewer-badge" id="viewer-badge"></div>
+</div>
+
+<script>
+  let peer = null;
+  let stream = null;
+  let facing = 'environment';
+  let myRoomId = null;
+
+  const $ = id => document.getElementById(id);
+
+  function status(msg) { $('status').textContent = msg; }
+  function showErr(msg) { $('error').textContent = msg; $('error').style.display = 'block'; }
+  function clearErr() { $('error').style.display = 'none'; $('status').textContent = ''; }
+
+  function genId() {
+    return Math.random().toString(36).substr(2,6).toUpperCase();
+  }
+
+  // ===== HOST =====
+  async function startHost() {
+    clearErr();
+    $('host-btn').disabled = true;
+    status('カメラを起動中…');
+
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: facing, width:{ideal:1280}, height:{ideal:720} },
+        audio: false
+      });
+    } catch(e) {
+      showErr('カメラが使えません。ブラウザのカメラ許可を確認してください。');
+      $('host-btn').disabled = false;
+      return;
+    }
+
+    myRoomId = genId();
+    status('サーバーに接続中…');
+
+    peer = new Peer('ippon-' + myRoomId);
+
+    peer.on('open', id => {
+      $('video').srcObject = stream;
+      $('room-display').textContent = myRoomId;
+      $('setup').style.display = 'none';
+      $('camera-view').style.display = 'block';
+    });
+
+    // 視聴者からのdata connectionを受けてcallする
+    peer.on('connection', dc => {
+      dc.on('data', msg => {
+        if (msg.startsWith('join:')) {
+          const viewerId = msg.replace('join:', '');
+          const call = peer.call(viewerId, stream);
+        }
+      });
+    });
+
+    peer.on('error', e => {
+      if (e.type === 'unavailable-id') {
+        // IDが被ったらリトライ
+        peer.destroy();
+        startHost();
+        return;
+      }
+      showErr('接続エラー: ' + e.type);
+      $('host-btn').disabled = false;
+    });
+  }
+
+  async function flipCam() {
+    facing = facing === 'environment' ? 'user' : 'environment';
+    try {
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: facing }, audio: false
+      });
+      $('video').srcObject = newStream;
+      if (peer) {
+        peer.connections && Object.values(peer.connections).forEach(conns => {
+          conns.forEach(c => {
+            if (c.peerConnection) {
+              c.peerConnection.getSenders().forEach(s => {
+                if (s.track && s.track.kind === 'video')
+                  s.replaceTrack(newStream.getVideoTracks()[0]);
+              });
+            }
+          });
+        });
+      }
+      stream.getTracks().forEach(t => t.stop());
+      stream = newStream;
+    } catch(e) {}
+  }
+
+  function stopHost() {
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    if (peer) peer.destroy();
+    peer = null; stream = null;
+    $('camera-view').style.display = 'none';
+    $('setup').style.display = 'flex';
+    $('host-btn').disabled = false;
+  }
+
+  // ===== VIEWER =====
+  function startViewer() {
+    clearErr();
+    const roomId = $('room-input').value.trim().toUpperCase();
+    if (roomId.length < 4) { showErr('ルームIDを入力してください'); return; }
+
+    $('setup').style.display = 'none';
+    $('viewer-view').style.display = 'block';
+    $('viewer-badge').textContent = 'ルームID: ' + roomId;
+
+    peer = new Peer();
+
+    peer.on('open', myId => {
+      // hostにdata connectionして参加通知
+      const dc = peer.connect('ippon-' + roomId);
+      dc.on('open', () => {
+        dc.send('join:' + myId);
+      });
+      dc.on('error', () => {
+        $('waiting-text').textContent = 'ルームが見つかりません。\nIDを確認してください。';
+      });
+    });
+
+    // hostからのcallを受ける
+    peer.on('call', call => {
+      call.answer();
+      call.on('stream', remoteStream => {
+        $('remote-video').srcObject = remoteStream;
+        $('waiting').style.display = 'none';
+      });
+    });
+
+    peer.on('error', e => {
+      $('waiting-text').textContent = 'エラー: ' + e.type + '\nルームIDを確認してください。';
+    });
+
+    // 15秒でタイムアウト表示
+    setTimeout(() => {
+      if ($('waiting').style.display !== 'none') {
+        $('waiting-text').textContent = '接続できませんでした。\nルームIDが正しいか確認してください。';
+      }
+    }, 15000);
+  }
+</script>
+</body>
+</html>

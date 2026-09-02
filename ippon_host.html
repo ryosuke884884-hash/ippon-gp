@@ -479,11 +479,15 @@ window.resetVotes = () => {
 
 window.addScore = (pi, delta) => {
   const newScores = [...currentScores];
-  const idx = 4 - pi;  // 表示逆順対応（SAGAWA=pi0→scores[4]）
+  const idx = 4 - pi;
   newScores[idx] = Math.max(0, (newScores[idx] || 0) + delta);
   set(ref(db, 'scores'), newScores);
 };
+_realAddScore = window.addScore;
+window.changeScore = (pi, delta) => window.addScore(pi, delta);
+
 window.resetScores = () => set(ref(db, 'scores'), [0,0,0,0,0]);
+_realResetScores = window.resetScores;
 
 // 音声トグル
 window.toggleAudio = function(audio, btnId) {
@@ -551,6 +555,7 @@ const subSeBtnMap = {
 window.becomeMaster = () => {
   set(ref(db, 'se_master'), myId);
 };
+_realBecomeMaster = window.becomeMaster;
 
 window.triggerSE = (key) => {
   if (currentSEKey === key) {
@@ -779,6 +784,44 @@ onValue(ref(db, 'answer_text'), (snapshot) => {
   }
 });
 
+// SP画面のevent delegation（moduleが読み込まれてから設定）
+const subSelect = document.getElementById('sub-select');
+if (subSelect) {
+  subSelect.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    // スコア±
+    if (btn.dataset.pi !== undefined && btn.dataset.delta !== undefined) {
+      window.addScore(parseInt(btn.dataset.pi), parseInt(btn.dataset.delta));
+    }
+    // SE
+    if (btn.dataset.se) {
+      window.triggerSE(btn.dataset.se);
+    }
+    // リセット
+    if (btn.id === 'sub-reset-btn') {
+      window.resetScores();
+    }
+  });
+}
+
+// PC自動マスター
+if (!/iPhone|iPad|Android|Mobile/i.test(navigator.userAgent) && window.innerWidth >= 768) {
+  set(ref(db, 'se_master'), myId);
+}
+
+// SPのSEボタンにイベントリスナーを設定
+document.querySelectorAll('button[data-se]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const key = btn.dataset.se;
+    if (window.triggerSE) window.triggerSE(key);
+  });
+});
+
+// スコアリセットボタン
+const resetBtn = document.getElementById('sub-reset-btn');
+if (resetBtn) resetBtn.addEventListener('click', () => window.resetScores && window.resetScores());
+
 </script>
 
 <div style="position:fixed;top:10px;right:10px;display:flex;gap:6px;z-index:9999;" id="pc-btns">
@@ -794,7 +837,48 @@ onValue(ref(db, 'answer_text'), (snapshot) => {
 <div id="sub-select" style="display:none;position:fixed;inset:0;background:#0a0a0a;z-index:9000;flex-direction:column;align-items:stretch;justify-content:flex-start;padding:12px;gap:8px;overflow:hidden;">
   <div style="text-align:center;font-size:11px;color:#d4a017;font-weight:900;letter-spacing:3px;flex-shrink:0;">IPPON HOST</div>
   <div style="flex:1;display:flex;flex-direction:column;gap:6px;overflow:hidden;">
-    <div style="flex:1;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;overflow:hidden;" id="result-score-grid"></div>
+    <div style="flex:1;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;overflow:hidden;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex:1;">
+        <span style="font-size:12px;color:#aaa;font-weight:900;min-width:90px;">WAKUSHIMA</span>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+          <button onclick="window.addScore(4,-1)" style="background:#3a1a1a;border:1px solid #aa4444;color:#ff8888;font-size:16px;width:32px;height:32px;border-radius:6px;cursor:pointer;">－</button>
+          <span id="sub-score-4" style="font-size:20px;font-weight:900;color:#f5c400;min-width:24px;text-align:center;">0</span>
+          <button onclick="window.addScore(4,1)" style="background:#1a3a1a;border:1px solid #44aa44;color:#88ff88;font-size:16px;width:32px;height:32px;border-radius:6px;cursor:pointer;">＋</button>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex:1;">
+        <span style="font-size:12px;color:#aaa;font-weight:900;min-width:90px;">AGATA</span>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+          <button onclick="window.addScore(3,-1)" style="background:#3a1a1a;border:1px solid #aa4444;color:#ff8888;font-size:16px;width:32px;height:32px;border-radius:6px;cursor:pointer;">－</button>
+          <span id="sub-score-3" style="font-size:20px;font-weight:900;color:#f5c400;min-width:24px;text-align:center;">0</span>
+          <button onclick="window.addScore(3,1)" style="background:#1a3a1a;border:1px solid #44aa44;color:#88ff88;font-size:16px;width:32px;height:32px;border-radius:6px;cursor:pointer;">＋</button>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex:1;">
+        <span style="font-size:12px;color:#aaa;font-weight:900;min-width:90px;">TOKUMOTO</span>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+          <button onclick="window.addScore(2,-1)" style="background:#3a1a1a;border:1px solid #aa4444;color:#ff8888;font-size:16px;width:32px;height:32px;border-radius:6px;cursor:pointer;">－</button>
+          <span id="sub-score-2" style="font-size:20px;font-weight:900;color:#f5c400;min-width:24px;text-align:center;">0</span>
+          <button onclick="window.addScore(2,1)" style="background:#1a3a1a;border:1px solid #44aa44;color:#88ff88;font-size:16px;width:32px;height:32px;border-radius:6px;cursor:pointer;">＋</button>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex:1;">
+        <span style="font-size:12px;color:#aaa;font-weight:900;min-width:90px;">AOKI</span>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+          <button onclick="window.addScore(1,-1)" style="background:#3a1a1a;border:1px solid #aa4444;color:#ff8888;font-size:16px;width:32px;height:32px;border-radius:6px;cursor:pointer;">－</button>
+          <span id="sub-score-1" style="font-size:20px;font-weight:900;color:#f5c400;min-width:24px;text-align:center;">0</span>
+          <button onclick="window.addScore(1,1)" style="background:#1a3a1a;border:1px solid #44aa44;color:#88ff88;font-size:16px;width:32px;height:32px;border-radius:6px;cursor:pointer;">＋</button>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex:1;">
+        <span style="font-size:12px;color:#aaa;font-weight:900;min-width:90px;">SAGAWA</span>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+          <button onclick="window.addScore(0,-1)" style="background:#3a1a1a;border:1px solid #aa4444;color:#ff8888;font-size:16px;width:32px;height:32px;border-radius:6px;cursor:pointer;">－</button>
+          <span id="sub-score-0" style="font-size:20px;font-weight:900;color:#f5c400;min-width:24px;text-align:center;">0</span>
+          <button onclick="window.addScore(0,1)" style="background:#1a3a1a;border:1px solid #44aa44;color:#88ff88;font-size:16px;width:32px;height:32px;border-radius:6px;cursor:pointer;">＋</button>
+        </div>
+      </div>
+    </div>
     <button onclick="window.resetScores()" style="flex-shrink:0;width:100%;background:#2a0a0a;border:1px solid #aa2222;color:#ff6666;font-size:13px;font-weight:900;padding:10px;border-radius:8px;cursor:pointer;">スコアリセット</button>
     <div style="flex-shrink:0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
       <button id="sub-laugh-btn-1" onclick="window.triggerSE('laugh_1')" style="background:#2a0a2a;border:1px solid #aa44aa;color:#ff88ff;font-size:14px;font-weight:900;padding:12px 0;border-radius:8px;cursor:pointer;">笑い1</button>
@@ -808,6 +892,14 @@ onValue(ref(db, 'answer_text'), (snapshot) => {
 </div>
 
 <script>
+// module読み込み前のプロキシ関数（onclickから呼ばれる）
+// moduleが読み込まれると_realXxxに本物の関数がセットされる
+var _realAddScore, _realResetScores, _realTriggerSE, _realBecomeMaster;
+
+window.addScore = function(pi, delta) { if (_realAddScore) _realAddScore(pi, delta); };
+window.resetScores = function() { if (_realResetScores) _realResetScores(); };
+window.triggerSE = function(key) { if (_realTriggerSE) _realTriggerSE(key); };
+window.becomeMaster = function() { if (_realBecomeMaster) _realBecomeMaster(); };
 window.goFullscreen = () => {
   document.documentElement.requestFullscreen();
   document.getElementById('fullscreen-btn-host').style.display = 'none';
@@ -818,7 +910,6 @@ document.addEventListener('fullscreenchange', () => {
   }
 });
 
-// サブ画面
 const playerNames = ['WAKUSHIMA','AGATA','TOKUMOTO','AOKI','SAGAWA'];
 function buildResultGrid() {
   const grid = document.getElementById('result-score-grid');
@@ -831,33 +922,35 @@ function buildResultGrid() {
     row.innerHTML = `
       <span style="font-size:12px;color:#aaa;font-weight:900;min-width:80px;">${name}</span>
       <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
-        <button onclick="window.changeScore(${pi},-1)" style="background:#3a1a1a;border:1px solid #aa4444;color:#ff8888;font-size:16px;width:32px;height:32px;border-radius:6px;cursor:pointer;">－</button>
+        <button data-pi="${pi}" data-delta="-1" style="background:#3a1a1a;border:1px solid #aa4444;color:#ff8888;font-size:16px;width:32px;height:32px;border-radius:6px;cursor:pointer;">－</button>
         <span id="sub-score-${pi}" style="font-size:20px;font-weight:900;color:#f5c400;min-width:24px;text-align:center;">0</span>
-        <button onclick="window.changeScore(${pi},1)" style="background:#1a3a1a;border:1px solid #44aa44;color:#88ff88;font-size:16px;width:32px;height:32px;border-radius:6px;cursor:pointer;">＋</button>
+        <button data-pi="${pi}" data-delta="1" style="background:#1a3a1a;border:1px solid #44aa44;color:#88ff88;font-size:16px;width:32px;height:32px;border-radius:6px;cursor:pointer;">＋</button>
       </div>`;
     grid.appendChild(row);
+  });
+  // クリックイベントをdata属性で処理
+  grid.querySelectorAll('button[data-pi]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const pi = parseInt(btn.dataset.pi);
+      const delta = parseInt(btn.dataset.delta);
+      if (window.addScore) window.addScore(pi, delta);
+    });
   });
 }
 
 const isSP = /iPhone|iPad|Android|Mobile/i.test(navigator.userAgent) || window.innerWidth < 768;
 
-window.showSubScreen = (type) => {
+window.showSubScreen = () => {
   document.getElementById('sub-select').style.display = 'flex';
-  buildResultGrid();
 };
 window.hideSubScreen = () => {
   document.getElementById('sub-select').style.display = 'none';
 };
 
-// SP検知: PC用UIを隠して選択画面を表示
 if (isSP) {
   document.getElementById('pc-btns').style.display = 'none';
   document.getElementById('vol-wrap').style.display = 'none';
   document.getElementById('sub-select').style.display = 'flex';
-  buildResultGrid();
-} else {
-  // PCは自動的にマスターになる
-  set(ref(db, 'se_master'), myId);
 }
 </script>
 </body>

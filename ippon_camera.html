@@ -110,8 +110,10 @@ body { background: #000; height: 100dvh; overflow: hidden; position: relative; }
 </div>
 
 <div class="overlay-bottom">
-  <button class="ctrl" onclick="flipCam()">🔄 カメラ切替</button>
-  <button class="ctrl" style="background:rgba(220,50,50,0.4);border-color:rgba(220,50,50,0.5);" onclick="stopCamera()">⏹ 停止</button>
+  <button class="ctrl" onclick="zoomOut()">🔍−</button>
+  <button class="ctrl" onclick="flipCam()">🔄 切替</button>
+  <button class="ctrl" onclick="zoomIn()">🔍+</button>
+  <button class="ctrl" style="background:rgba(220,50,50,0.4);border-color:rgba(220,50,50,0.5);" onclick="stopCamera()">⏹</button>
 </div>
 
 <script type="module">
@@ -219,6 +221,22 @@ window.stopCamera = function() {
   document.getElementById('status').textContent = '';
   document.getElementById('start-screen').style.display = 'flex';
 };
+
+let currentZoom = 1;
+
+async function applyZoom(zoom) {
+  if (!stream) return;
+  const track = stream.getVideoTracks()[0];
+  const capabilities = track.getCapabilities();
+  if (!capabilities.zoom) return;
+  const min = capabilities.zoom.min;
+  const max = capabilities.zoom.max;
+  currentZoom = Math.min(Math.max(zoom, min), max);
+  await track.applyConstraints({ advanced: [{ zoom: currentZoom }] });
+}
+
+window.zoomIn = () => applyZoom(currentZoom + 0.5);
+window.zoomOut = () => applyZoom(currentZoom - 0.5);
 </script>
 </body>
 </html>

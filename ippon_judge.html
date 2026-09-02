@@ -200,6 +200,30 @@ onValue(votesRef, (snapshot) => {
   updateVoteBtn();
   renderAll(currentVotes);
 });
+// スリープ防止（Wake Lock API + iOS向け無音動画）
+let wakeLock = null;
+async function requestWakeLock() {
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+  } catch(e) {}
+}
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible') {
+    await requestWakeLock();
+  }
+});
+requestWakeLock();
+
+// iOS Safari向け: 無音動画ループでスリープ防止
+(function() {
+  const v = document.createElement('video');
+  v.setAttribute('playsinline', '');
+  v.setAttribute('muted', '');
+  v.setAttribute('loop', '');
+  v.style.cssText = 'position:fixed;top:-1px;left:-1px;width:1px;height:1px;opacity:0;pointer-events:none;';
+  v.src = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28ybXA0MQAAAAhmcmVlAAAAG21kYXQAAAGzABAHAAABthADAowdbb9/AAAC6W1vb3YAAABsbXZoZAAAAAB8JbCAfCWwgAAAA+gAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAHAAAA4bXNlaAAAAABAAAAhmZGlhAAAAHG1kaGQAAAAAAAAAAAAAAAAAKAAAAAAAAAAAAAAAAAAAACFoZGxyAAAAAAAAAAB2aWRlAAAAAAAAAAAAAAAAVmlkZW9IYW5kbGVyAAAAAS1taW5mAAAAFHZtaGQAAAABAAAAAAAAAAAAAAAkZGluZgAAABxkcmVmAAAAAAAAAAEAAAAMdXJsIAAAAAEAAADtc3RibAAAAIlzdHNkAAAAAAAAAAEAAAB5YXZjMQAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAEAAQBIAAAASAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGP//AAAAQ2F2Y0MBQsAK/+EAGWdCwArZBaHegIQAAAMAAQAAAwAKjxYtlgEABmjr48siwAAAABhzdHRzAAAAAAAAAAEAAAABAAAAAQAAABRzdHNzAAAAAAAAAAEAAAABAAAAHHN0c2MAAAAAAAAAAQAAAAEAAAABAAAAAQAAABRzdHN6AAAAAAAAAAsAAAABAAAAFHN0Y28AAAAAAAAAAQAAAAwAAAAYc3RzcwAAAAAAAAABAAAAAAA=';
+  document.body.appendChild(v);
+  document.addEventListener('touchstart', () => { v.play(); }, { once: true });
+})();
 </script>
-</body>
 </html>

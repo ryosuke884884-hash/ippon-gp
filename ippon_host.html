@@ -144,9 +144,11 @@ h1 { color: #f5c400; font-size: 14px; letter-spacing: 2px; margin-bottom: 6px; }
   <span id="master-label" style="font-size:11px;color:#888;">なし</span>
   <button id="master-btn" onclick="window.becomeMaster()" style="background:#1a2a1a;border:1px solid #44aa44;color:#88ff88;font-size:11px;padding:3px 12px;border-radius:6px;cursor:pointer;margin-left:auto;">マスターになる</button>
 </div>
-  <span style="font-size:18px;">🔈</span>
-  <input id="vol-slider" type="range" min="0" max="100" value="100" oninput="setVolume(this.value)">
-  <span id="vol-label">100%</span>
+
+<div style="position:fixed;top:10px;left:10px;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,0.6);padding:4px 10px;border-radius:8px;z-index:999;">
+  <span style="font-size:14px;">🔈</span>
+  <input id="vol-slider" type="range" min="0" max="100" value="100" oninput="setVolume(this.value)" style="width:80px;accent-color:#f5c400;">
+  <span id="vol-label" style="font-size:11px;color:#aaa;min-width:32px;">100%</span>
 </div>
 
 <div id="agenda-wrap" style="width:94vw;margin:10px auto 0;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:5px;">

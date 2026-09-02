@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IPPON GRAND PRIX</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #000; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; position: relative; }
+[data-netlify-badge], a[href*="netlify.com"] { display: none !important; }
+#score-img { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: fill; z-index: 1; }
+#taiki-img { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: fill; display: none; z-index: 10; }
+#odai-img { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: fill; display: none; z-index: 20; }
+#score-badge { position: absolute; bottom: 13vh; left: 8vw; width: auto; height: 40vh; display: none; z-index: 30; }
+#scoreboard {
+  position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+  display: none; z-index: 15;
+  background: #A100FF;
+  flex-direction: column; align-items: center; justify-content: flex-start;
+  padding: 4px 0; gap: 0; overflow: hidden;
+  transform-origin: top center;
+}
+#scoreboard.visible { display: flex; }
+.sb-stage { display: flex; gap: 8px; width: 100%; max-width: 100%; background: #6a3a9a; border: none; border-radius: 0; padding: 0 0.5vw; box-sizing: border-box; }
+.sb-desk { flex: 1; min-width: 0; max-width: 320px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding-bottom: 0; overflow: visible; }
+.sb-profile-card {
+  width: 100%;
+  max-width: 320px;
+  background: linear-gradient(180deg, #f8f8f8 0%, #e0e0e0 60%, #c8c8c8 100%);
+  border: 3px solid #aaaaaa;
+  border-radius: 6px;
+  padding: 6px 6px 10px;
+  box-shadow:
+    inset 0 2px 4px rgba(255,255,255,0.8),
+    inset 0 -3px 6px rgba(0,0,0,0.2),
+    0 6px 16px rgba(0,0,0,0.5),
+    0 2px 4px rgba(0,0,0,0.3);
+  position: relative;
+}
+.sb-profile-card::before {
+  content: "";
+  position: absolute;
+  top: 2px; left: 4px; right: 4px;
+  height: 2px;
+  background: rgba(255,255,255,0.9);
+  border-radius: 2px;
+}
+.sb-avatar { width: 100%; max-width: 320px; aspect-ratio: 1; overflow: hidden; border-radius: 6px; border: 2px solid #000; }
+.sb-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sb-name { color: #000; font-size: 50px; font-weight: 900; font-family: "Bebas Neue", sans-serif; text-align: center; width: 100%; letter-spacing: 0.08em; line-height: 1.2; }
+.sb-score { color: #fff; font-size: 120px; font-weight: 900; line-height: 1; text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 40px #c084fc, 0 0 80px #c084fc, 0 0 100px #c084fc; }
+.sb-box {
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  position: relative;
+  overflow: visible;
+}
+/* 上面（天板） */
+.sb-box-top {
+  height: 16px;
+  margin: 0 12px;
+  background: linear-gradient(180deg, #5a5a70 0%, #3a3a50 100%);
+  border-radius: 3px 3px 0 0;
+  border-top: 2px solid #7a7a90;
+  border-left: 1px solid #4a4a58;
+  border-right: 1px solid #2a2a38;
+  box-shadow: 0 -2px 6px rgba(150,150,255,0.1);
+  position: relative;
+  overflow: visible;
+}
+.sb-box-side-svg {
+  position: absolute;
+  top: 0; right: -20px;
+  width: 20px;
+  height: 100%;
+  z-index: 1;
+  overflow: visible;
+}
+.sb-tubes-wrap {
+  margin: 0 12px;
+  padding: 6px 8px 10px;
+  background:
+    linear-gradient(180deg,
+      #2e2820 0%,
+      #1e1a14 50%,
+      #0e0b08 100%
+    );
+  border-left: 1px solid #3a2a1a;
+  border-right: 1px solid #2a1a0a;
+  border-bottom: 3px solid #0a0806;
+  position: relative;
+}
+.sb-tubes-wrap::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255,220,150,0.3) 50%, transparent);
+}
+.sb-tubes-wrap::after { content: none; }
+.sb-tubes { display: flex; gap: 3px; width: 100%; align-items: stretch; overflow: hidden; margin: 0 auto; }
+.sb-tube-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.sb-cap { height: 24px; border-radius: 4px 4px 0 0; border: 1px solid #444; border-bottom: none; background: linear-gradient(90deg, #1a1a1a 0%, #444 20%, #666 45%, #444 70%, #1a1a1a 100%); }
+.sb-cap.bottom { height: 24px; border-radius: 0 0 4px 4px; border-top: none; border-bottom: 1px solid #444; background: linear-gradient(90deg, #111 0%, #333 20%, #555 45%, #333 70%, #111 100%); }
+.sb-tube-body { height: 240px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: linear-gradient(90deg, #444 0%, #555 25%, #606060 50%, #555 75%, #444 100%); border-left: 1px solid #333; border-right: 1px solid #333; }
+.sb-tube-body.on { background: linear-gradient(90deg, #c8a800 0%, #ffe800 25%, #fff5a0 45%, #ffee00 55%, #ffe000 75%, #c8a800 100%); border-left: 1px solid #f5d800; border-right: 1px solid #f5d800; box-shadow: inset 0 0 20px rgba(255,255,150,0.6), 0 0 8px rgba(255,230,0,0.4); }
+.sb-tube-label { writing-mode: vertical-rl; text-orientation: mixed; font-size: 16px; font-weight: 900; letter-spacing: 0.15em; user-select: none; color: #000; }
+.sb-tube-body.on .sb-tube-label { color: #000; }
+#fullscreen-btn { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.15); border: none; color: white; font-size: 13px; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-family: sans-serif; z-index: 100; }
+#agenda-img { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: fill; display: none; z-index: 50; }
+#agenda-video { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: fill; display: none; z-index: 50; background: #000; }
+#confetti-layer { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; display: none; z-index: 51; overflow: hidden; }
+@keyframes confetti-fall { 0% { transform: translateY(-30px) rotate(0deg); opacity:1; } 100% { transform: translateY(105vh) rotate(720deg); opacity:0.5; } }
+@keyframes confetti-sway { 0%,100% { margin-left:0px; } 50% { margin-left:40px; } }
+.cp { position: absolute; top: 0; border-radius: 2px; animation: confetti-fall linear infinite, confetti-sway ease-in-out infinite; }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Black+Han+Sans&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+<script>
+// 画像プリロード（DOMに追加してブラウザに確実にキャッシュさせる）
+(function() {
+  var preloadUrls = [
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/mp3_odai%2Fmain_taiki.png?alt=media&token=c549f99f-6d55-42c7-a3eb-280146b051c0',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_agenda%2Fimage_rule_dummy.png?alt=media&token=bb1c9c96-3fd1-43a9-9faa-378277ac8e36',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_agenda%2Fimage_qr.png?alt=media&token=314140fb-cfed-4200-acae-934af91f1c67',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_agenda%2Fimage_chairman%27s%20eye.png?alt=media&token=6bf664d7-5b30-487e-a714-5d8e714802d0',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_agenda%2Fimage_chairman%27s%20eye_answer.png?alt=media&token=883574a7-45bc-4d62-a9af-553480a43e53',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_agenda%2Fanswer_question1_1.png?alt=media&token=5112ab42-6787-4102-8bae-129e757a481d',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_agenda%2Fanswer_question1_2.png?alt=media&token=9afa1c5b-9784-4d53-b4f2-1c073dd1345b',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_agenda%2Fanswer_question2_1.png?alt=media&token=6d0d8c3f-0581-4fb0-92b5-d08f1eebb7dd',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_agenda%2Fanswer_question2_2.png?alt=media&token=5801a27e-d5c8-41a8-bea1-d936df660c4a',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_agenda%2Fanswer_question3_1.png?alt=media&token=3436f1c0-fca7-4fad-8b23-b0f2e8773a0a',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_agenda%2Fanswer_question3_2.png?alt=media&token=c934af54-42e2-4bb2-bce2-d9b2edd96bb8',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_agenda%2Fimage_winner_player1.png?alt=media&token=95362c30-f5ce-4b1c-aaa5-9759613aa1db',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_agenda%2Fimage_winner_player2.png?alt=media&token=17764024-686f-48e4-9c76-e41bceb21ab3',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_agenda%2Fimage_winner_player3.png?alt=media&token=c5c40aa2-c70e-41aa-8a51-9090111d2840',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_agenda%2Fimage_winner_player4.png?alt=media&token=078bb57c-06a4-4326-a565-76b2192b7932',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_agenda%2Fimage_winner_player5.png?alt=media&token=77cd1c5a-27fe-4264-abdb-0398a71cc75f',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fmain_0.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fmain_1.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fmain_2.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fmain_3.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fmain_4.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fmain_5.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fmain_6.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fmain_IPPON.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fkekka_0.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fkekka_1.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fkekka_2.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fkekka_3.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fkekka_4.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fkekka_5.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_question%2Fimage_question1.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_question%2Fimage_question2.png?alt=media&token=cd331e8b-2f89-427b-9d86-4255213fab14',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_question%2Fimage_question3.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_question%2Fimage_question4.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_question%2Fimage_question5.png?alt=media&token=a294c596-7e23-4198-8fed-020034a3c7ca',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_portrait%2Fportrait_player1.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_portrait%2Fportrait_player2.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_portrait%2Fportrait_player3.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_portrait%2Fportrait_player4.png?alt=media&token=9de8a04a-5719-4acc-9a25-c3f967b01d9f',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_portrait%2Fportrait_player5.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_question%2Fimage_question6.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_introduce%2Fimage_introduce_judge1.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_introduce%2Fimage_introduce_judge2.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_introduce%2Fimage_introduce_judge3.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_introduce%2Fimage_introduce_judge4.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_introduce%2Fimage_introduce_judge5.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_introduce%2Fimage_introduce_player1.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_introduce%2Fimage_introduce_player2.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_introduce%2Fimage_introduce_player3.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_introduce%2Fimage_introduce_player4.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_introduce%2Fimage_introduce_player5.png?alt=media'
+];
+  // DOMに非表示imgを追加してブラウザに確実にキャッシュさせる
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none;';
+  preloadUrls.forEach(function(url) {
+    var img = document.createElement('img');
+    img.src = url;
+    img.setAttribute('aria-hidden', 'true');
+    wrap.appendChild(img);
+  });
+  document.head.appendChild(wrap);
+  window._preloadWrap = wrap; // GC防止
+
+  // agenda表示用img要素を事前生成（display切り替えで即表示）
+  var agendaUrls = preloadUrls.filter(function(url) {
+    return url.includes('image_agenda') || url.includes('image_introduce') || url.includes('image_winner');
+  });
+  document.addEventListener('DOMContentLoaded', function() {
+    var agendaWrap = document.getElementById('agenda-cache-wrap');
+    agendaUrls.forEach(function(url) {
+      var img = document.createElement('img');
+      img.src = url;
+      img.className = 'agenda-img-cache';
+      img.setAttribute('data-src', url);
+      img.style.cssText = 'position:absolute;top:0;left:0;width:100vw;height:100vh;object-fit:fill;display:none;z-index:50;';
+      agendaWrap.appendChild(img);
+    });
+  });
+})();
+</script>
+</head>
+<body>
+
+<video id="camera-video" autoplay playsinline muted style="position:absolute;top:0;left:0;width:100vw;height:100vh;object-fit:contain;display:none;z-index:1;background:#000;"></video>
+<img id="score-img" src="" alt="">
+<img id="odai-img" src="" alt="">
+<img id="taiki-img" src="" alt="">
+<div id="scoreboard">
+  <div style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;">
+    <svg width="100%" height="100%" viewBox="0 0 1920 1080" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0,996 Q960,986 1920,996" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="6"/>
+      <path d="M0,1002 Q960,992 1920,1002" fill="none" stroke="rgba(200,150,255,0.6)" stroke-width="10"/>
+    </svg>
+  </div>
+</div>
+<img id="agenda-img" src="" alt="">
+<video id="agenda-video" src="" playsinline></video>
+<div id="agenda-cache-wrap"></div>
+<div id="agenda-text" style="position:absolute;top:0;left:0;width:100vw;height:100vh;display:none;z-index:51;pointer-events:none;">
+  <!-- 白枠: 左45px〜910px、上90px〜590px (1920x1080基準) -->
+  <div style="position:absolute;left:2.3%;top:8.3%;width:44.5%;height:46.3%;">
+    <!-- 回答テキスト（上下左右センタリング） -->
+    <div id="agenda-text-answer" style="position:absolute;top:0;left:0;right:0;bottom:70px;display:flex;align-items:center;justify-content:center;font-size:76px;font-weight:900;color:#111;line-height:1.4;text-align:center;word-break:break-all;font-family:sans-serif;padding:20px;"></div>
+    <!-- ペンネーム（白枠下端ギリギリ・右寄せ） -->
+    <div id="agenda-text-name" style="position:absolute;bottom:0;right:2%;font-size:46px;font-weight:700;color:#333;text-align:right;font-family:sans-serif;line-height:1;"></div>
+  </div>
+</div>
+<div id="confetti-layer"></div>
+<img id="score-badge" src="" alt="">
+<button id="fullscreen-btn" onclick="goFullscreen()">⛶ 全画面</button>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+// ===== PeerJS カメラ受信 =====
+let cameraPeer = null;
+let cameraConnectedRoomId = null;
+
+function connectCamera(roomId) {
+  if (cameraConnectedRoomId === roomId) return; // すでに接続済み
+  if (cameraPeer) { try { cameraPeer.destroy(); } catch(e) {} }
+  cameraConnectedRoomId = roomId;
+
+  cameraPeer = new Peer();
+  cameraPeer.on('open', myId => {
+    const dc = cameraPeer.connect('ippon-host-' + roomId);
+    dc.on('open', () => dc.send('join:' + myId));
+    dc.on('error', () => { cameraConnectedRoomId = null; });
+  });
+  cameraPeer.on('call', call => {
+    call.answer();
+    call.on('stream', stream => {
+      const v = document.getElementById('camera-video');
+      v.srcObject = stream;
+    });
+  });
+  cameraPeer.on('error', () => { cameraConnectedRoomId = null; });
+}
+
+function showCameraVideo(show) {
+  document.getElementById('camera-video').style.display = show ? 'block' : 'none';
+}
+// ===== PeerJS カメラ受信 ここまで =====
+
+const images = {
+  "taiki": "https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/mp3_odai%2Fmain_taiki.png?alt=media&token=c549f99f-6d55-42c7-a3eb-280146b051c0",
+  "odai_1": "https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_question%2Fimage_question1.png?alt=media",
+  "odai_2": "https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_question%2Fimage_question2.png?alt=media&token=cd331e8b-2f89-427b-9d86-4255213fab14",
+  "odai_3": "https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_question%2Fimage_question3.png?alt=media",
+  "odai_4": "https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_question%2Fimage_question4.png?alt=media",
+  "odai_5": "https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_question%2Fimage_question5.png?alt=media&token=a294c596-7e23-4198-8fed-020034a3c7ca",
+  "odai_6": "https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_question%2Fimage_question6.png?alt=media",
+  "main_0": "https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fmain_0.png?alt=media",
+  "main_1": "https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fmain_1.png?alt=media",
+  "main_2": "https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fmain_2.png?alt=media",
+  "main_3": "https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fmain_3.png?alt=media",
+  "main_4": "https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fmain_4.png?alt=media",
+  "main_5": "https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fmain_5.png?alt=media",
+  "main_6": "https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fmain_6.png?alt=media",
+  "kekka_0": "https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fkekka_0.png?alt=media",
+  "kekka_1": "https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fkekka_1.png?alt=media",
+  "kekka_2": "https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fkekka_2.png?alt=media",
+  "kekka_3": "https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fkekka_3.png?alt=media",
+  "kekka_4": "https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fkekka_4.png?alt=media",
+  "kekka_5": "https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fkekka_5.png?alt=media",
+  "kekka_6": "https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/scoring_system%2Fmain_IPPON.png?alt=media",
+};
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC-mISssQxyO67vl3JxbbBktqXoDvmGLdk",
+  authDomain: "song-fes-ippon-gp.firebaseapp.com",
+  databaseURL: "https://song-fes-ippon-gp-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "song-fes-ippon-gp",
+  storageBucket: "song-fes-ippon-gp.firebasestorage.app",
+  messagingSenderId: "727959135173",
+  appId: "1:727959135173:web:5d983f22d1164a11a6e1ac"
+};
+
+const PLAYER_IMGS = [
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_portrait%2Fportrait_player5.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_portrait%2Fportrait_player4.png?alt=media&token=9de8a04a-5719-4acc-9a25-c3f967b01d9f',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_portrait%2Fportrait_player3.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_portrait%2Fportrait_player2.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_portrait%2Fportrait_player1.png?alt=media',
+  'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/image_question%2Fimage_question6.png?alt=media',
+];
+const sbPlayers = [
+  {last: 'SAGAWA',   first: 'SO'},
+  {last: 'AOKI',     first: 'MARINA'},
+  {last: 'TOKUMOTO', first: 'TAKASHI'},
+  {last: 'AGATA',    first: 'TOMOYA'},
+  {last: 'WAKUSHIMA',first: 'AIKO'}
+];
+const STICKS = 10;
+
+function renderScoreboard(scores) {
+  const sb = document.getElementById('scoreboard');
+  sb.innerHTML = `
+<div style="width:100%;height:80px;background:#A100FF;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><div style="color:#fff;font-size:52px;font-weight:900;letter-spacing:0.15em;text-align:center;text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 40px #c084fc, 0 0 80px #c084fc;">SONG ŌGIRI GRAND PRIX</div></div><div class="sb-stage" style="display:flex;flex-direction:row;align-items:flex-start;justify-content:center;gap:40px;width:100%;padding:4px 16px 0;height:904px;overflow:visible;">` + sbPlayers.map((p, pi) => {
+    const sc = scores[4 - pi] || 0;
+    const lit = sc % STICKS === 0 && sc > 0 ? STICKS : sc % STICKS;
+    const tubes = Array.from({length: STICKS}, (_, i) => `
+      <div class="sb-tube-wrap">
+        <div class="sb-cap"></div>
+        <div class="sb-tube-body ${i < lit ? 'on' : ''}"><span class="sb-tube-label">IPPON</span></div>
+        <div class="sb-cap bottom"></div>
+      </div>`).join('');
+    return `<div class="sb-desk">
+      <div class="sb-profile-card">
+        <div class="sb-avatar"><img src="${PLAYER_IMGS[pi]}"></div>
+        <div class="sb-name" style="color:#000;text-shadow:none;"><div style="font-size:50px;">${p.last}</div>${p.first ? '<div style="font-size:50px;">' + p.first + '</div>' : ''}</div>
+      </div>
+      <div class="sb-score">${sc}</div>
+      <div class="sb-box" style="position:relative;">
+        <div style="position:relative;">
+          <div class="sb-box-top"></div>
+        </div>
+        <div class="sb-tubes-wrap" style="position:relative;">
+          <div class="sb-tubes">${tubes}</div>
+          ${pi === 0 ? `<svg style="position:absolute;top:0;right:-24px;width:24px;height:304px;overflow:visible;" xmlns="http://www.w3.org/2000/svg"><polygon points="0,-16 24,-14.9930 24,0.3357 0,0" fill="#3a3a48"/><polygon points="0,0 24,0.3357 24,291.5804 0,304" fill="#1a1a22"/></svg>` : ''}
+          ${pi === 1 ? `<svg style="position:absolute;top:0;right:-14px;width:14px;height:304px;overflow:visible;" xmlns="http://www.w3.org/2000/svg"><polygon points="0,-16 14,-14.4151 14,0.5283 0,0" fill="#3a3a48"/><polygon points="0,0 14,0.5283 14,284.4528 0,304" fill="#1a1a22"/></svg>` : ''}
+          ${pi === 3 ? `<svg style="position:absolute;top:0;left:-14px;width:14px;height:304px;overflow:visible;" xmlns="http://www.w3.org/2000/svg"><polygon points="14,-16 0,-14.4151 0,0.5283 14,0" fill="#3a3a48"/><polygon points="14,0 0,0.5283 0,284.4528 14,304" fill="#1a1a22"/></svg>` : ''}
+          ${pi === 4 ? `<svg style="position:absolute;top:0;left:-24px;width:24px;height:304px;overflow:visible;" xmlns="http://www.w3.org/2000/svg"><polygon points="24,-16 0,-14.9930 0,0.3357 24,0" fill="#3a3a48"/><polygon points="24,0 0,0.3357 0,291.5804 24,304" fill="#1a1a22"/></svg>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('') + `</div><div style="width:100%;height:80px;background:#A100FF;flex-shrink:0;"></div>`;
+}
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let currentVotes = 0;
+let currentRevealed = false;
+let currentMode = '';
+
+window.goFullscreen = () => {
+  document.documentElement.requestFullscreen();
+  document.getElementById('fullscreen-btn').style.display = 'none';
+};
+
+let ipponTriggered = false;
+let imageQueue = [];
+let isPlayingImageQueue = false;
+let displayedVotes = 0; // キューで表示中の票数
+
+function enqueueImages(fromVotes, toVotes) {
+  for (let i = fromVotes + 1; i <= toVotes; i++) {
+    imageQueue.push(i);
+  }
+  if (!isPlayingImageQueue) playNextImage();
+}
+
+function playNextImage() {
+  if (imageQueue.length === 0) {
+    isPlayingImageQueue = false;
+    return;
+  }
+  isPlayingImageQueue = true;
+  const votes = imageQueue.shift();
+  displayedVotes = votes;
+  showVoteImage(votes);
+  setTimeout(playNextImage, 150);
+}
+
+function showScoreImg(n) {
+  document.querySelectorAll('[id^="score-img-"]').forEach(el => el.style.display = 'none');
+  const img = document.getElementById('score-img');
+  const cached = document.getElementById('score-img-' + n);
+  if (cached) {
+    img.style.display = 'none';
+    cached.style.display = 'block';
+  } else {
+    if (images['main_' + n]) img.src = images['main_' + n];
+    img.style.display = 'block';
+  }
+}
+function showKekkaImg(n) {
+  document.querySelectorAll('[id^="kekka-img-"]').forEach(el => el.style.display = 'none');
+  const badge = document.getElementById('score-badge');
+  const cached = document.getElementById('kekka-img-' + n);
+  if (cached) {
+    badge.style.display = 'none';
+    cached.style.display = 'block';
+  } else {
+    if (images['kekka_' + n]) badge.src = images['kekka_' + n];
+    badge.style.display = 'block';
+  }
+}
+function hideScoreImg() {
+  document.querySelectorAll('[id^="score-img-"]').forEach(el => el.style.display = 'none');
+  document.getElementById('score-img').style.display = 'none';
+}
+function hideKekkaImg() {
+  document.querySelectorAll('[id^="kekka-img-"]').forEach(el => el.style.display = 'none');
+  document.getElementById('score-badge').style.display = 'none';
+}
+
+function showVoteImage(votes) {
+  if (ipponTriggered) return;
+  if (currentMode === 'scoreboard') return;
+
+  if (votes >= 6) {
+    ipponTriggered = true;
+    const agendaImg = document.getElementById('agenda-img');
+    const agendaVideo = document.getElementById('agenda-video');
+    agendaImg.style.display = 'none'; document.querySelectorAll('.agenda-img-cache').forEach(el => el.style.display = 'none');
+    agendaVideo.pause(); agendaVideo.style.display = 'none'; agendaVideo.src = '';
+    stopConfetti(document.getElementById('confetti-layer'));
+    showKekkaImg(6);
+    showCameraVideo(false);
+  } else if (currentRevealed) {
+    showScoreImg(votes);  // フレーム枠を表示（透過PNGなのでカメラが透ける）
+    showKekkaImg(votes);
+  } else {
+    showScoreImg(votes);  // フレーム枠を表示
+    hideKekkaImg();
+  }
+}
+
+function updateUI() {
+  if (ipponTriggered) return;
+  if (currentMode === 'scoreboard') return;
+
+  if (currentMode === 'saiten') {
+    showCameraVideo(true);
+    showScoreImg(currentVotes);  // フレーム枠は常に表示
+    if (currentRevealed) {
+      showKekkaImg(currentVotes);
+    } else {
+      hideKekkaImg();
+    }
+  } else {
+    showCameraVideo(false);
+    if (currentRevealed) {
+      showScoreImg(currentVotes);
+      showKekkaImg(currentVotes);
+    } else {
+      showScoreImg(currentVotes);
+      hideKekkaImg();
+    }
+  }
+}
+
+// camera_room監視
+onValue(ref(db, 'camera_room'), (snapshot) => {
+  const roomId = snapshot.val();
+  if (roomId) {
+    connectCamera(roomId);
+  }
+});
+
+onValue(ref(db, 'scores'), (snapshot) => {
+  const scores = snapshot.val() || [0,0,0,0,0];
+  renderScoreboard(scores);
+});
+
+onValue(ref(db, 'agenda'), (snapshot) => {
+  const agendaVideo = document.getElementById('agenda-video');
+  const confettiLayer = document.getElementById('confetti-layer');
+  const url = snapshot.val();
+
+  // 全agenda-img-*を非表示
+  document.querySelectorAll('.agenda-img-cache').forEach(el => el.style.display = 'none');
+
+  if (url) {
+    const isVideo = url.includes('.mp4') || url.includes('.webm') || url.includes('.mov');
+    agendaVideo.pause(); agendaVideo.style.display = 'none'; agendaVideo.src = '';
+    stopConfetti(confettiLayer);
+    if (isVideo) {
+      agendaVideo.src = url;
+      agendaVideo.style.display = 'block';
+      agendaVideo.onended = () => remove(ref(db, 'agenda'));
+      agendaVideo.play().catch(e => console.error(e));
+    } else {
+      // 事前生成済みのimg要素を探してdisplay:block
+      const cached = document.querySelector('.agenda-img-cache[data-src="' + url + '"]');
+      if (cached) {
+        cached.style.display = 'block';
+      } else {
+        // フォールバック（プリロードにないURL）
+        const agendaImg = document.getElementById('agenda-img');
+        agendaImg.src = url;
+        agendaImg.style.display = 'block';
+      }
+      if (url.includes('winner')) startConfetti(confettiLayer);
+    }
+  } else {
+    agendaVideo.pause(); agendaVideo.style.display = 'none'; agendaVideo.src = '';
+    document.getElementById('agenda-img').style.display = 'none';
+    stopConfetti(confettiLayer);
+  }
+});
+
+onValue(ref(db, 'answer_text'), (snapshot) => {
+  const el = document.getElementById('agenda-text');
+  const answerEl = document.getElementById('agenda-text-answer');
+  const nameEl = document.getElementById('agenda-text-name');
+  const val = snapshot.val();
+  if (val) {
+    try {
+      const data = JSON.parse(val);
+      answerEl.textContent = data.answer || '';
+      nameEl.textContent = data.name || '';
+    } catch(e) {
+      answerEl.textContent = val;
+      nameEl.textContent = '';
+    }
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+    answerEl.textContent = '';
+    nameEl.textContent = '';
+  }
+});
+
+function startConfetti(layer) {
+  layer.innerHTML = '';
+  const colors = ['#FFD700','#FFC200','#FFB800','#FFD000','#FFCA00','#FFE566','#E8A800'];
+  for (let i = 0; i < 150; i++) {
+    const el = document.createElement('div');
+    el.className = 'cp';
+    const w = Math.random() * 12 + 7;
+    const h = Math.random() * 20 + 10;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const left = Math.random() * 100;
+    const dur = Math.random() * 2.5 + 2;
+    const swayDur = Math.random() * 1.5 + 1;
+    const delay = Math.random() * -5;
+    el.style.cssText = `width:${w}px;height:${h}px;background:${color};left:${left}%;animation-duration:${dur}s,${swayDur}s;animation-delay:${delay}s,${delay}s;opacity:${Math.random()*0.5+0.5};`;
+    layer.appendChild(el);
+  }
+  layer.style.display = 'block';
+}
+
+function stopConfetti(layer) {
+  layer.style.display = 'none';
+  layer.innerHTML = '';
+}
+
+onValue(ref(db, 'mode'), (snapshot) => {
+  const mode = snapshot.val();
+  currentMode = mode || '';
+  const sb = document.getElementById('scoreboard');
+  if (mode === 'scoreboard') {
+    sb.classList.add('visible');
+    document.getElementById('score-badge').style.display = 'none';
+    const agendaImg = document.getElementById('agenda-img');
+    const agendaVideo = document.getElementById('agenda-video');
+    agendaImg.style.display = 'none'; document.querySelectorAll('.agenda-img-cache').forEach(el => el.style.display = 'none');
+    agendaVideo.pause(); agendaVideo.style.display = 'none'; agendaVideo.src = '';
+    stopConfetti(document.getElementById('confetti-layer'));
+  } else if (mode === 'agenda') {
+    sb.classList.remove('visible');
+    document.getElementById('score-badge').style.display = 'none';
+    hideScoreImg();
+    document.getElementById('taiki-img').style.display = 'none';
+    document.getElementById('odai-img').style.display = 'none'; [1,2,3,4,5,6].forEach(function(n){var el=document.getElementById('odai-img-'+n);if(el)el.style.display='none';});
+  } else {
+    sb.classList.remove('visible');
+    document.getElementById('score-badge').style.display = 'none';
+  }
+  if (mode === 'saiten') {
+    ipponTriggered = false;
+    imageQueue = [];
+    isPlayingImageQueue = false;
+    displayedVotes = 0;
+    showCameraVideo(true);
+    showScoreImg(0);  // フレーム枠（main_0.png）を表示、透過PNGなのでカメラが透ける
+  } else {
+    showCameraVideo(false);
+  }
+});
+
+onValue(ref(db, 'taiki'), (snapshot) => {
+  const taikiImg = document.getElementById('taiki-img');
+  taikiImg.src = images['taiki'];
+  taikiImg.style.display = snapshot.val() ? 'block' : 'none';
+  if (snapshot.val()) {
+    hideScoreImg();
+  }
+});
+
+// お題画像を事前にDOMへ展開
+document.addEventListener('DOMContentLoaded', function() {
+  // お題画像プリ展開
+  [1,2,3,4,5,6].forEach(function(n) {
+    var url = images['odai_' + n];
+    if (!url) return;
+    var img = document.createElement('img');
+    img.src = url;
+    img.id = 'odai-img-' + n;
+    img.style.cssText = 'position:absolute;top:0;left:0;width:100vw;height:100vh;object-fit:fill;display:none;z-index:20;';
+    document.body.appendChild(img);
+  });
+
+  // 採点中画像（main_0〜6）プリ展開
+  [0,1,2,3,4,5,6].forEach(function(n) {
+    var url = images['main_' + n];
+    if (!url) return;
+    var img = document.createElement('img');
+    img.src = url;
+    img.id = 'score-img-' + n;
+    img.style.cssText = 'position:absolute;top:0;left:0;width:100vw;height:100vh;object-fit:fill;display:none;z-index:1;';
+    document.body.appendChild(img);
+  });
+
+  // kekkaバッジ画像（kekka_0〜5）プリ展開（左下バッジ）
+  [0,1,2,3,4,5].forEach(function(n) {
+    var url = images['kekka_' + n];
+    if (!url) return;
+    var img = document.createElement('img');
+    img.src = url;
+    img.id = 'kekka-img-' + n;
+    img.style.cssText = 'position:absolute;left:8vw;bottom:13vh;height:40vh;display:none;z-index:30;';
+    document.body.appendChild(img);
+  });
+
+  // kekka_6（IPPON全画面）は全画面表示
+  var ipponUrl = images['kekka_6'];
+  if (ipponUrl) {
+    var ipponImg = document.createElement('img');
+    ipponImg.src = ipponUrl;
+    ipponImg.id = 'kekka-img-6';
+    ipponImg.style.cssText = 'position:absolute;top:0;left:0;width:100vw;height:100vh;object-fit:fill;display:none;z-index:30;';
+    document.body.appendChild(ipponImg);
+  }
+});
+
+onValue(ref(db, 'odai'), (snapshot) => {
+  const odaiNum = snapshot.val();
+  // 全odai画像を非表示
+  [1,2,3,4,5,6].forEach(function(n) {
+    var el = document.getElementById('odai-img-' + n);
+    if (el) el.style.display = 'none';
+  });
+  document.getElementById('odai-img').style.display = 'none'; [1,2,3,4,5,6].forEach(function(n){var el=document.getElementById('odai-img-'+n);if(el)el.style.display='none';});
+  if (odaiNum) {
+    var cached = document.getElementById('odai-img-' + odaiNum);
+    if (cached) {
+      cached.style.display = 'block';
+    } else if (images['odai_' + odaiNum]) {
+      // フォールバック
+      var odaiImg = document.getElementById('odai-img');
+      odaiImg.src = images['odai_' + odaiNum];
+      odaiImg.style.display = 'block';
+    }
+  }
+});
+
+let voteDebounceTimer = null;
+let latestVoteCount = 0;
+
+onValue(ref(db, 'votes'), (snapshot) => {
+  const allVotes = snapshot.val() || {};
+  latestVoteCount = Math.min(Object.keys(allVotes).length, 6);
+
+  clearTimeout(voteDebounceTimer);
+  voteDebounceTimer = setTimeout(() => {
+    const newVotes = latestVoteCount;
+    if (newVotes === 0) {
+      currentVotes = 0;
+      ipponTriggered = false;
+      imageQueue = [];
+      isPlayingImageQueue = false;
+      displayedVotes = 0;
+      updateUI();
+    } else if (newVotes > currentVotes) {
+      const from = Math.max(currentVotes, displayedVotes);
+      currentVotes = newVotes;
+      enqueueImages(from, newVotes);
+    }
+  }, 50);
+});
+
+onValue(ref(db, 'revealed'), (snapshot) => {
+  currentRevealed = snapshot.val() || false;
+  updateUI();
+});
+</script>
+</body>
+</html>

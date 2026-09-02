@@ -61,9 +61,6 @@ h1 { color: #f5c400; font-size: 14px; letter-spacing: 2px; margin-bottom: 6px; }
 .btn.playing { background: #aa6600 !important; color: #fff !important; }
 
 /* ボリューム */
-#vol-wrap { display: none; }
-#vol-slider { display: none; }
-#vol-label { display: none; }
 </style>
 
 
@@ -794,34 +791,19 @@ onValue(ref(db, 'answer_text'), (snapshot) => {
   <input id="vol-slider" type="range" min="0" max="100" value="100" oninput="setVolume(this.value)" style="width:80px;accent-color:#f5c400;">
   <span id="vol-label" style="font-size:11px;color:#aaa;min-width:32px;">100%</span>
 </div>
-<div id="sub-select" style="display:none;position:fixed;inset:0;background:#0a0a0a;z-index:9000;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:32px;">
-  <div style="font-family:sans-serif;font-size:16px;color:#d4a017;font-weight:900;letter-spacing:3px;margin-bottom:8px;">IPPON HOST</div>
-  <button onclick="showSubScreen('result')" style="width:100%;background:#1a3a1a;border:2px solid #44aa44;color:#88ff88;font-size:22px;font-weight:900;padding:28px;border-radius:16px;cursor:pointer;">結果モード</button>
-  <button onclick="showSubScreen('se')" style="width:100%;background:#2a0a2a;border:2px solid #aa44aa;color:#ff88ff;font-size:22px;font-weight:900;padding:28px;border-radius:16px;cursor:pointer;">SE操作</button>
-</div>
-
-<div id="sub-result" style="display:none;position:fixed;inset:0;background:#0a0a0a;z-index:8000;flex-direction:column;align-items:center;justify-content:flex-start;padding:16px;gap:12px;overflow-y:auto;">
-  <div style="width:100%;display:flex;align-items:center;margin-bottom:8px;">
-    <button onclick="hideSubScreen()" style="background:none;border:1px solid #444;color:#aaa;font-size:13px;padding:6px 14px;border-radius:8px;cursor:pointer;">← 戻る</button>
-    <div style="flex:1;text-align:center;font-size:14px;color:#d4a017;font-weight:900;letter-spacing:2px;">結果モード</div>
-  </div>
-  <div style="width:100%;display:grid;grid-template-columns:1fr 1fr;gap:10px;" id="result-score-grid"></div>
-  <button onclick="window.resetScores()" style="width:100%;background:#2a0a0a;border:2px solid #aa2222;color:#ff6666;font-size:16px;font-weight:900;padding:16px;border-radius:14px;cursor:pointer;margin-top:8px;">スコアリセット</button>
-</div>
-
-<!-- SE サブ画面 -->
-<div id="sub-se" style="display:none;position:fixed;inset:0;background:#0a0a0a;z-index:8000;flex-direction:column;align-items:center;justify-content:flex-start;padding:16px;gap:10px;overflow-y:auto;">
-  <div style="width:100%;display:flex;align-items:center;margin-bottom:8px;">
-    <button onclick="hideSubScreen()" style="background:none;border:1px solid #444;color:#aaa;font-size:13px;padding:6px 14px;border-radius:8px;cursor:pointer;">← 戻る</button>
-    <div style="flex:1;text-align:center;font-size:14px;color:#d4a017;font-weight:900;letter-spacing:2px;">SE操作</div>
-  </div>
-  <div style="width:100%;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-    <button id="sub-laugh-btn-1" onclick="window.triggerSE('laugh_1')" style="background:#2a0a2a;border:2px solid #aa44aa;color:#ff88ff;font-size:18px;font-weight:900;padding:24px;border-radius:14px;cursor:pointer;">笑い1</button>
-    <button id="sub-laugh-btn-2" onclick="window.triggerSE('laugh_2')" style="background:#2a0a2a;border:2px solid #aa44aa;color:#ff88ff;font-size:18px;font-weight:900;padding:24px;border-radius:14px;cursor:pointer;">笑い2</button>
-    <button id="sub-laugh-btn-3" onclick="window.triggerSE('laugh_3')" style="background:#2a0a2a;border:2px solid #aa44aa;color:#ff88ff;font-size:18px;font-weight:900;padding:24px;border-radius:14px;cursor:pointer;">笑い3</button>
-    <button id="sub-laugh-btn-4" onclick="window.triggerSE('laugh_4')" style="background:#2a0a2a;border:2px solid #aa44aa;color:#ff88ff;font-size:18px;font-weight:900;padding:24px;border-radius:14px;cursor:pointer;">笑い4</button>
-    <button id="sub-se-cheer-btn" onclick="window.triggerSE('se_cheer')" style="background:#1a1a3a;border:2px solid #4444aa;color:#8888ff;font-size:18px;font-weight:900;padding:24px;border-radius:14px;cursor:pointer;">歓声</button>
-    <button id="sub-se-clap-btn" onclick="window.triggerSE('se_clap')" style="background:#1a1a3a;border:2px solid #4444aa;color:#8888ff;font-size:18px;font-weight:900;padding:24px;border-radius:14px;cursor:pointer;">拍手</button>
+<div id="sub-select" style="display:none;position:fixed;inset:0;background:#0a0a0a;z-index:9000;flex-direction:column;align-items:stretch;justify-content:flex-start;padding:12px;gap:8px;overflow:hidden;">
+  <div style="text-align:center;font-size:11px;color:#d4a017;font-weight:900;letter-spacing:3px;flex-shrink:0;">IPPON HOST</div>
+  <div style="flex:1;display:flex;flex-direction:column;gap:6px;overflow:hidden;">
+    <div style="flex:1;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;overflow:hidden;" id="result-score-grid"></div>
+    <button onclick="window.resetScores()" style="flex-shrink:0;width:100%;background:#2a0a0a;border:1px solid #aa2222;color:#ff6666;font-size:13px;font-weight:900;padding:10px;border-radius:8px;cursor:pointer;">スコアリセット</button>
+    <div style="flex-shrink:0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+      <button id="sub-laugh-btn-1" onclick="window.triggerSE('laugh_1')" style="background:#2a0a2a;border:1px solid #aa44aa;color:#ff88ff;font-size:14px;font-weight:900;padding:12px 0;border-radius:8px;cursor:pointer;">笑い1</button>
+      <button id="sub-laugh-btn-2" onclick="window.triggerSE('laugh_2')" style="background:#2a0a2a;border:1px solid #aa44aa;color:#ff88ff;font-size:14px;font-weight:900;padding:12px 0;border-radius:8px;cursor:pointer;">笑い2</button>
+      <button id="sub-laugh-btn-3" onclick="window.triggerSE('laugh_3')" style="background:#2a0a2a;border:1px solid #aa44aa;color:#ff88ff;font-size:14px;font-weight:900;padding:12px 0;border-radius:8px;cursor:pointer;">笑い3</button>
+      <button id="sub-laugh-btn-4" onclick="window.triggerSE('laugh_4')" style="background:#2a0a2a;border:1px solid #aa44aa;color:#ff88ff;font-size:14px;font-weight:900;padding:12px 0;border-radius:8px;cursor:pointer;">笑い4</button>
+      <button id="sub-se-cheer-btn" onclick="window.triggerSE('se_cheer')" style="background:#1a1a3a;border:1px solid #4444aa;color:#8888ff;font-size:14px;font-weight:900;padding:12px 0;border-radius:8px;cursor:pointer;">歓声</button>
+      <button id="sub-se-clap-btn" onclick="window.triggerSE('se_clap')" style="background:#1a1a3a;border:1px solid #4444aa;color:#8888ff;font-size:14px;font-weight:900;padding:12px 0;border-radius:8px;cursor:pointer;">拍手</button>
+    </div>
   </div>
 </div>
 
@@ -844,33 +826,27 @@ function buildResultGrid() {
   grid.innerHTML = '';
   playerNames.forEach((name, i) => {
     const pi = 4 - i;
-    const cell = document.createElement('div');
-    cell.style.cssText = 'background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:8px;';
-    cell.innerHTML = `
-      <div style="font-size:11px;color:#aaa;font-weight:900;">${name}</div>
-      <div id="sub-score-${pi}" style="font-size:28px;font-weight:900;color:#f5c400;">0</div>
-      <div style="display:flex;gap:8px;">
-        <button onclick="window.changeScore(${pi},1)" style="background:#1a3a1a;border:1px solid #44aa44;color:#88ff88;font-size:20px;width:44px;height:44px;border-radius:8px;cursor:pointer;">＋</button>
-        <button onclick="window.changeScore(${pi},-1)" style="background:#3a1a1a;border:1px solid #aa4444;color:#ff8888;font-size:20px;width:44px;height:44px;border-radius:8px;cursor:pointer;">－</button>
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex:1;';
+    row.innerHTML = `
+      <span style="font-size:12px;color:#aaa;font-weight:900;min-width:80px;">${name}</span>
+      <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+        <button onclick="window.changeScore(${pi},-1)" style="background:#3a1a1a;border:1px solid #aa4444;color:#ff8888;font-size:16px;width:32px;height:32px;border-radius:6px;cursor:pointer;">－</button>
+        <span id="sub-score-${pi}" style="font-size:20px;font-weight:900;color:#f5c400;min-width:24px;text-align:center;">0</span>
+        <button onclick="window.changeScore(${pi},1)" style="background:#1a3a1a;border:1px solid #44aa44;color:#88ff88;font-size:16px;width:32px;height:32px;border-radius:6px;cursor:pointer;">＋</button>
       </div>`;
-    grid.appendChild(cell);
+    grid.appendChild(row);
   });
 }
 
 const isSP = /iPhone|iPad|Android|Mobile/i.test(navigator.userAgent) || window.innerWidth < 768;
 
 window.showSubScreen = (type) => {
-  document.getElementById('sub-select').style.display = 'none';
-  document.getElementById('sub-result').style.display = type === 'result' ? 'flex' : 'none';
-  document.getElementById('sub-se').style.display = type === 'se' ? 'flex' : 'none';
-  if (type === 'result') buildResultGrid();
+  document.getElementById('sub-select').style.display = 'flex';
+  buildResultGrid();
 };
 window.hideSubScreen = () => {
-  document.getElementById('sub-result').style.display = 'none';
-  document.getElementById('sub-se').style.display = 'none';
-  if (isSP) {
-    document.getElementById('sub-select').style.display = 'flex';
-  }
+  document.getElementById('sub-select').style.display = 'none';
 };
 
 // SP検知: PC用UIを隠して選択画面を表示
@@ -878,6 +854,10 @@ if (isSP) {
   document.getElementById('pc-btns').style.display = 'none';
   document.getElementById('vol-wrap').style.display = 'none';
   document.getElementById('sub-select').style.display = 'flex';
+  buildResultGrid();
+} else {
+  // PCは自動的にマスターになる
+  set(ref(db, 'se_master'), myId);
 }
 </script>
 </body>

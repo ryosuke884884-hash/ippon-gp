@@ -491,20 +491,25 @@ onValue(ref(db, 'agenda'), (snapshot) => {
 
   if (url) {
     const isVideo = url.includes('.mp4') || url.includes('.webm') || url.includes('.mov');
-    agendaVideo.pause(); agendaVideo.style.display = 'none'; agendaVideo.src = '';
     stopConfetti(confettiLayer);
     if (isVideo) {
-      agendaVideo.src = url;
+      // 動画: 同じURLなら再利用、違うURLなら新規セット
+      if (agendaVideo.getAttribute('src') !== url) {
+        agendaVideo.src = url;
+      }
       agendaVideo.style.display = 'block';
       agendaVideo.onended = () => remove(ref(db, 'agenda'));
       agendaVideo.play().catch(e => console.error(e));
+      // 画像を隠す
+      document.querySelectorAll('.agenda-img-cache').forEach(el => el.style.display = 'none');
+      document.getElementById('agenda-img').style.display = 'none';
     } else {
-      // 事前生成済みのimg要素を探してdisplay:block
+      // 画像: 動画映像は隠すが音声は止めない
+      agendaVideo.style.display = 'none';
       const cached = document.querySelector('.agenda-img-cache[data-src="' + url + '"]');
       if (cached) {
         cached.style.display = 'block';
       } else {
-        // フォールバック（プリロードにないURL）
         const agendaImg = document.getElementById('agenda-img');
         agendaImg.src = url;
         agendaImg.style.display = 'block';
@@ -512,6 +517,7 @@ onValue(ref(db, 'agenda'), (snapshot) => {
       if (url.includes('winner')) startConfetti(confettiLayer);
     }
   } else {
+    // agendaがnullになったとき（停止）は完全停止
     agendaVideo.pause(); agendaVideo.style.display = 'none'; agendaVideo.src = '';
     document.getElementById('agenda-img').style.display = 'none';
     stopConfetti(confettiLayer);

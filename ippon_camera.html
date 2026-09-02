@@ -147,14 +147,43 @@ async function setHighBitrate(pc) {
   if (!sender) return;
   const params = sender.getParameters();
   if (!params.encodings) params.encodings = [{}];
-  params.encodings[0].maxBitrate = 8000000; // 8Mbps
+  params.encodings[0].maxBitrate = 8000000;
   params.encodings[0].maxFramerate = 30;
   try { await sender.setParameters(params); } catch(e) {}
 }
 
+// スリープ防止
+let wakeLock = null;
+async function requestWakeLock() {
+  try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
+}
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible') await requestWakeLock();
+});
+requestWakeLock();
+
+// 無音動画ループでスリープ防止（iOS/Android両対応）
+(function() {
+  const v = document.createElement('video');
+  v.setAttribute('playsinline', '');
+  v.setAttribute('muted', '');
+  v.setAttribute('loop', '');
+  v.style.cssText = 'position:fixed;top:-1px;left:-1px;width:1px;height:1px;opacity:0;pointer-events:none;';
+  v.src = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28ybXA0MQAAAAhmcmVlAAAAG21kYXQAAAGzABAHAAABthADAowdbb9/AAAC6W1vb3YAAABsbXZoZAAAAAB8JbCAfCWwgAAAA+gAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAHAAAA4bXNlaAAAAABAAAAhmZGlhAAAAHG1kaGQAAAAAAAAAAAAAAAAAKAAAAAAAAAAAAAAAAAAAACFoZGxyAAAAAAAAAAB2aWRlAAAAAAAAAAAAAAAAVmlkZW9IYW5kbGVyAAAAAS1taW5mAAAAFHZtaGQAAAABAAAAAAAAAAAAAAAkZGluZgAAABxkcmVmAAAAAAAAAAEAAAAMdXJsIAAAAAEAAADtc3RibAAAAIlzdHNkAAAAAAAAAAEAAAB5YXZjMQAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAEAAQBIAAAASAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGP//AAAAQ2F2Y0MBQsAK/+EAGWdCwArZBaHegIQAAAMAAQAAAwAKjxYtlgEABmjr48siwAAAABhzdHRzAAAAAAAAAAEAAAABAAAAAQAAABRzdHNzAAAAAAAAAAEAAAABAAAAHHN0c2MAAAAAAAAAAQAAAAEAAAABAAAAAQAAABRzdHN6AAAAAAAAAAsAAAABAAAAFHN0Y28AAAAAAAAAAQAAAAwAAAAYc3RzcwAAAAAAAAABAAAAAAA=';
+  document.body.appendChild(v);
+  v.play().catch(() => {
+    document.addEventListener('touchstart', () => v.play(), { once: true });
+  });
+})();
+
 window.startCamera = async function() {
   document.getElementById('start-screen').style.display = 'none';
   document.getElementById('status').textContent = 'カメラ起動中…';
+
+  // フルスクリーンに
+  try {
+    await document.documentElement.requestFullscreen();
+  } catch(e) {}
 
   try {
     stream = await navigator.mediaDevices.getUserMedia({
@@ -169,6 +198,9 @@ window.startCamera = async function() {
 
   document.getElementById('video').srcObject = stream;
   document.getElementById('status').textContent = 'サーバー接続中…';
+
+  // カメラ起動後にWake Lock
+  try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
 
   roomId = genId();
   peer = new Peer('ippon-host-' + roomId);

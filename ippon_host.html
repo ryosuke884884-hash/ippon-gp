@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>IPPON - 司会</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; touch-action: manipulation; }
+html, body { overflow: hidden; height: 100%; }
 body { background: #111; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 8px; min-height: 100vh; }
 h1 { color: #f5c400; font-size: 14px; letter-spacing: 2px; margin-bottom: 6px; }
 #vote-count { font-size: 72px; font-weight: 900; color: #f5c400; line-height: 1; }
@@ -60,9 +61,9 @@ h1 { color: #f5c400; font-size: 14px; letter-spacing: 2px; margin-bottom: 6px; }
 .btn.playing { background: #aa6600 !important; color: #fff !important; }
 
 /* ボリューム */
-#vol-wrap { width: 94vw; display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 6px 0; border-top: 1px solid #333; }
-#vol-slider { flex: 1; accent-color: #f5c400; }
-#vol-label { font-size: 13px; color: #aaa; min-width: 40px; text-align: right; }
+#vol-wrap { display: none; }
+#vol-slider { display: none; }
+#vol-label { display: none; }
 </style>
 
 
@@ -145,11 +146,7 @@ h1 { color: #f5c400; font-size: 14px; letter-spacing: 2px; margin-bottom: 6px; }
   <button id="master-btn" onclick="window.becomeMaster()" style="background:#1a2a1a;border:1px solid #44aa44;color:#88ff88;font-size:11px;padding:3px 12px;border-radius:6px;cursor:pointer;margin-left:auto;">マスターになる</button>
 </div>
 
-<div style="position:fixed;top:10px;left:10px;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,0.6);padding:4px 10px;border-radius:8px;z-index:999;">
-  <span style="font-size:14px;">🔈</span>
-  <input id="vol-slider" type="range" min="0" max="100" value="100" oninput="setVolume(this.value)" style="width:80px;accent-color:#f5c400;">
-  <span id="vol-label" style="font-size:11px;color:#aaa;min-width:32px;">100%</span>
-</div>
+
 
 <div id="agenda-wrap" style="width:94vw;margin:10px auto 0;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:5px;">
   <div style="font-size:9px;color:#f5c400;font-weight:900;letter-spacing:3px;margin-bottom:2px;">AGENDA</div>
@@ -204,24 +201,24 @@ const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 let audioUnlocked = false;
 
 window.unlockAudio = async () => {
+  if (audioUnlocked) return;
   await audioCtx.resume();
-  // サイレント音でAudioContextをunlock
   const buf = audioCtx.createBuffer(1, 1, 22050);
   const src = audioCtx.createBufferSource();
   src.buffer = buf;
   src.connect(audioCtx.destination);
   src.start(0);
-  // 全new Audio()を一度再生→即停止してブラウザのunlockを取得
   const unlockList = [...Object.values(sounds), sound10, soundIppon, ...Object.values(odaiAudios), ...Object.values(laughAudios), noIpponAudio, shutsudaiAudio, thinkingAudio, ...Object.values(agendaAudios)];
   for (const a of unlockList) {
     a.volume = 0;
     try { await a.play(); a.pause(); a.currentTime = 0; a.volume = masterVolume; } catch(e) {}
   }
   audioUnlocked = true;
-  const btn = document.getElementById('audio-unlock-btn');
-  btn.textContent = '🔊 音声有効';
-  btn.style.background = '#00aa44';
 };
+
+// 最初のクリックで自動unlock
+document.addEventListener('click', () => window.unlockAudio(), { once: true });
+document.addEventListener('touchstart', () => window.unlockAudio(), { once: true });
 
 setInterval(() => audioCtx.resume(), 30000);
 
@@ -787,20 +784,27 @@ onValue(ref(db, 'answer_text'), (snapshot) => {
 
 </script>
 
-<div style="position:fixed;top:10px;right:10px;display:flex;gap:6px;z-index:9999;">
-  <button id="audio-unlock-btn" onclick="window.unlockAudio()" style="background:#ff4444;border:none;color:#fff;font-size:12px;font-weight:900;padding:8px 14px;border-radius:8px;cursor:pointer;">🔇 音声を有効化</button>
+<div style="position:fixed;top:10px;right:10px;display:flex;gap:6px;z-index:9999;" id="pc-btns">
   <button id="fullscreen-btn-host" onclick="window.goFullscreen()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:12px;font-weight:900;padding:8px 14px;border-radius:8px;cursor:pointer;">⛶ 全画面</button>
-  <button onclick="showSubScreen('result')" style="background:#1a3a1a;border:1px solid #44aa44;color:#88ff88;font-size:12px;font-weight:900;padding:8px 14px;border-radius:8px;cursor:pointer;">結果</button>
-  <button onclick="showSubScreen('se')" style="background:#2a0a2a;border:1px solid #aa44aa;color:#ff88ff;font-size:12px;font-weight:900;padding:8px 14px;border-radius:8px;cursor:pointer;">SE</button>
 </div>
 
 <!-- 結果モード サブ画面 -->
+<div id="vol-wrap" style="position:fixed;top:10px;left:10px;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,0.6);padding:4px 10px;border-radius:8px;z-index:999;">
+  <span style="font-size:14px;">🔈</span>
+  <input id="vol-slider" type="range" min="0" max="100" value="100" oninput="setVolume(this.value)" style="width:80px;accent-color:#f5c400;">
+  <span id="vol-label" style="font-size:11px;color:#aaa;min-width:32px;">100%</span>
+</div>
+<div id="sub-select" style="display:none;position:fixed;inset:0;background:#0a0a0a;z-index:9000;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:32px;">
+  <div style="font-family:sans-serif;font-size:16px;color:#d4a017;font-weight:900;letter-spacing:3px;margin-bottom:8px;">IPPON HOST</div>
+  <button onclick="showSubScreen('result')" style="width:100%;background:#1a3a1a;border:2px solid #44aa44;color:#88ff88;font-size:22px;font-weight:900;padding:28px;border-radius:16px;cursor:pointer;">結果モード</button>
+  <button onclick="showSubScreen('se')" style="width:100%;background:#2a0a2a;border:2px solid #aa44aa;color:#ff88ff;font-size:22px;font-weight:900;padding:28px;border-radius:16px;cursor:pointer;">SE操作</button>
+</div>
+
 <div id="sub-result" style="display:none;position:fixed;inset:0;background:#0a0a0a;z-index:8000;flex-direction:column;align-items:center;justify-content:flex-start;padding:16px;gap:12px;overflow-y:auto;">
   <div style="width:100%;display:flex;align-items:center;margin-bottom:8px;">
     <button onclick="hideSubScreen()" style="background:none;border:1px solid #444;color:#aaa;font-size:13px;padding:6px 14px;border-radius:8px;cursor:pointer;">← 戻る</button>
     <div style="flex:1;text-align:center;font-size:14px;color:#d4a017;font-weight:900;letter-spacing:2px;">結果モード</div>
   </div>
-  <button onclick="window.showScoreboard()" style="width:100%;background:#1a3a5a;border:2px solid #4488cc;color:#88ccff;font-size:20px;font-weight:900;padding:20px;border-radius:14px;cursor:pointer;">スコアボード表示</button>
   <div style="width:100%;display:grid;grid-template-columns:1fr 1fr;gap:10px;" id="result-score-grid"></div>
   <button onclick="window.resetScores()" style="width:100%;background:#2a0a0a;border:2px solid #aa2222;color:#ff6666;font-size:16px;font-weight:900;padding:16px;border-radius:14px;cursor:pointer;margin-top:8px;">スコアリセット</button>
 </div>
@@ -810,11 +814,6 @@ onValue(ref(db, 'answer_text'), (snapshot) => {
   <div style="width:100%;display:flex;align-items:center;margin-bottom:8px;">
     <button onclick="hideSubScreen()" style="background:none;border:1px solid #444;color:#aaa;font-size:13px;padding:6px 14px;border-radius:8px;cursor:pointer;">← 戻る</button>
     <div style="flex:1;text-align:center;font-size:14px;color:#d4a017;font-weight:900;letter-spacing:2px;">SE操作</div>
-  </div>
-  <div style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px;">
-    <span style="font-size:12px;color:#aaa;">🎵 マスター:</span>
-    <span id="sub-master-label" style="font-size:12px;color:#888;">なし</span>
-    <button onclick="window.becomeMaster()" style="margin-left:auto;background:#1a2a1a;border:1px solid #44aa44;color:#88ff88;font-size:12px;padding:6px 16px;border-radius:8px;cursor:pointer;">マスターになる</button>
   </div>
   <div style="width:100%;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
     <button id="sub-laugh-btn-1" onclick="window.triggerSE('laugh_1')" style="background:#2a0a2a;border:2px solid #aa44aa;color:#ff88ff;font-size:18px;font-weight:900;padding:24px;border-radius:14px;cursor:pointer;">笑い1</button>
@@ -858,7 +857,10 @@ function buildResultGrid() {
   });
 }
 
+const isSP = /iPhone|iPad|Android|Mobile/i.test(navigator.userAgent) || window.innerWidth < 768;
+
 window.showSubScreen = (type) => {
+  document.getElementById('sub-select').style.display = 'none';
   document.getElementById('sub-result').style.display = type === 'result' ? 'flex' : 'none';
   document.getElementById('sub-se').style.display = type === 'se' ? 'flex' : 'none';
   if (type === 'result') buildResultGrid();
@@ -866,7 +868,17 @@ window.showSubScreen = (type) => {
 window.hideSubScreen = () => {
   document.getElementById('sub-result').style.display = 'none';
   document.getElementById('sub-se').style.display = 'none';
+  if (isSP) {
+    document.getElementById('sub-select').style.display = 'flex';
+  }
 };
+
+// SP検知: PC用UIを隠して選択画面を表示
+if (isSP) {
+  document.getElementById('pc-btns').style.display = 'none';
+  document.getElementById('vol-wrap').style.display = 'none';
+  document.getElementById('sub-select').style.display = 'flex';
+}
 </script>
 </body>
 </html>

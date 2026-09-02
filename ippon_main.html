@@ -580,7 +580,7 @@ onValue(ref(db, 'mode'), (snapshot) => {
     const agendaImg = document.getElementById('agenda-img');
     const agendaVideo = document.getElementById('agenda-video');
     agendaImg.style.display = 'none'; document.querySelectorAll('.agenda-img-cache').forEach(el => el.style.display = 'none');
-    agendaVideo.pause(); agendaVideo.style.display = 'none'; agendaVideo.src = '';
+    agendaVideo.style.display = 'none'; // 映像は隠すが音声は止めない
     stopConfetti(document.getElementById('confetti-layer'));
   } else if (mode === 'agenda') {
     sb.classList.remove('visible');

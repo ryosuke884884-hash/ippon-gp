@@ -272,6 +272,7 @@ const sound10 = new Audio(BASE + '6.mp3?alt=media');
 const soundIppon = new Audio(BASE + 'IPPON.mp3?alt=media');
 const shutsudaiAudio = new Audio(BASE + encodeURIComponent('出題音.mp3') + '?alt=media');
 const thinkingAudio = new Audio(BASE + encodeURIComponent('ルイジアナ.mp3') + '?alt=media');
+thinkingAudio.loop = true;
 const odaiAudios = {
   1: new Audio('https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/mp3_question%2Fmp3_question1.mp3?alt=media&token=ee2b6513-85bc-4574-bfee-b0463a61b3be'),
   2: new Audio('https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/mp3_question%2Fmp3_question2.mp3?alt=media&token=b58afff7-81bf-4171-9773-9ee1ebd8a8fe'),
@@ -412,6 +413,8 @@ onValue(ref(db, 'scores'), (snap) => {
   currentScores = scores;
   for (let i = 0; i < 5; i++) {
     document.getElementById('sc-' + i).textContent = scores[4 - i] || 0;
+    const subEl = document.getElementById('sub-score-' + (4 - i));
+    if (subEl) subEl.textContent = scores[4 - i] || 0;
   }
 });
 
@@ -542,6 +545,14 @@ const seBtnMap = {
   se_cheer: 'se-cheer-btn',
   se_clap: 'se-clap-btn',
 };
+const subSeBtnMap = {
+  laugh_1: 'sub-laugh-btn-1',
+  laugh_2: 'sub-laugh-btn-2',
+  laugh_3: 'sub-laugh-btn-3',
+  laugh_4: 'sub-laugh-btn-4',
+  se_cheer: 'sub-se-cheer-btn',
+  se_clap: 'sub-se-clap-btn',
+};
 
 window.becomeMaster = () => {
   set(ref(db, 'se_master'), myId);
@@ -563,15 +574,18 @@ onValue(ref(db, 'se_master'), (snapshot) => {
   isMaster = masterId === myId;
   const label = document.getElementById('master-label');
   const btn = document.getElementById('master-btn');
+  const subLabel = document.getElementById('sub-master-label');
   if (masterId) {
     label.textContent = isMaster ? '自分 ✓' : '他の端末';
     label.style.color = isMaster ? '#88ff88' : '#ff8888';
     btn.textContent = isMaster ? 'マスター中' : 'マスターになる（上書き）';
     btn.style.borderColor = isMaster ? '#44aa44' : '#aa4444';
+    if (subLabel) { subLabel.textContent = isMaster ? '自分 ✓' : '他の端末'; subLabel.style.color = isMaster ? '#88ff88' : '#ff8888'; }
   } else {
     label.textContent = 'なし';
     label.style.color = '#888';
     btn.textContent = 'マスターになる';
+    if (subLabel) { subLabel.textContent = 'なし'; subLabel.style.color = '#888'; }
   }
 });
 
@@ -579,14 +593,18 @@ onValue(ref(db, 'se_master'), (snapshot) => {
 onValue(ref(db, 'se_trigger'), (snapshot) => {
   const data = snapshot.val();
 
-  // ボタンUIを全端末で同期
+  // ボタンUIを全端末で同期（メイン＋サブ画面）
   Object.keys(seBtnMap).forEach(k => {
     const btn = document.getElementById(seBtnMap[k]);
     if (btn) btn.classList.remove('playing');
+    const subBtn = document.getElementById(subSeBtnMap[k]);
+    if (subBtn) subBtn.style.opacity = '1';
   });
   if (data && data.action === 'play') {
     const btn = document.getElementById(seBtnMap[data.key]);
     if (btn) btn.classList.add('playing');
+    const subBtn = document.getElementById(subSeBtnMap[data.key]);
+    if (subBtn) subBtn.style.opacity = '0.5';
   }
 
   // マスターのみ音を再生
@@ -772,6 +790,40 @@ onValue(ref(db, 'answer_text'), (snapshot) => {
 <div style="position:fixed;top:10px;right:10px;display:flex;gap:6px;z-index:9999;">
   <button id="audio-unlock-btn" onclick="window.unlockAudio()" style="background:#ff4444;border:none;color:#fff;font-size:12px;font-weight:900;padding:8px 14px;border-radius:8px;cursor:pointer;">🔇 音声を有効化</button>
   <button id="fullscreen-btn-host" onclick="window.goFullscreen()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:12px;font-weight:900;padding:8px 14px;border-radius:8px;cursor:pointer;">⛶ 全画面</button>
+  <button onclick="showSubScreen('result')" style="background:#1a3a1a;border:1px solid #44aa44;color:#88ff88;font-size:12px;font-weight:900;padding:8px 14px;border-radius:8px;cursor:pointer;">結果</button>
+  <button onclick="showSubScreen('se')" style="background:#2a0a2a;border:1px solid #aa44aa;color:#ff88ff;font-size:12px;font-weight:900;padding:8px 14px;border-radius:8px;cursor:pointer;">SE</button>
+</div>
+
+<!-- 結果モード サブ画面 -->
+<div id="sub-result" style="display:none;position:fixed;inset:0;background:#0a0a0a;z-index:8000;flex-direction:column;align-items:center;justify-content:flex-start;padding:16px;gap:12px;overflow-y:auto;">
+  <div style="width:100%;display:flex;align-items:center;margin-bottom:8px;">
+    <button onclick="hideSubScreen()" style="background:none;border:1px solid #444;color:#aaa;font-size:13px;padding:6px 14px;border-radius:8px;cursor:pointer;">← 戻る</button>
+    <div style="flex:1;text-align:center;font-size:14px;color:#d4a017;font-weight:900;letter-spacing:2px;">結果モード</div>
+  </div>
+  <button onclick="window.showScoreboard()" style="width:100%;background:#1a3a5a;border:2px solid #4488cc;color:#88ccff;font-size:20px;font-weight:900;padding:20px;border-radius:14px;cursor:pointer;">スコアボード表示</button>
+  <div style="width:100%;display:grid;grid-template-columns:1fr 1fr;gap:10px;" id="result-score-grid"></div>
+  <button onclick="window.resetScores()" style="width:100%;background:#2a0a0a;border:2px solid #aa2222;color:#ff6666;font-size:16px;font-weight:900;padding:16px;border-radius:14px;cursor:pointer;margin-top:8px;">スコアリセット</button>
+</div>
+
+<!-- SE サブ画面 -->
+<div id="sub-se" style="display:none;position:fixed;inset:0;background:#0a0a0a;z-index:8000;flex-direction:column;align-items:center;justify-content:flex-start;padding:16px;gap:10px;overflow-y:auto;">
+  <div style="width:100%;display:flex;align-items:center;margin-bottom:8px;">
+    <button onclick="hideSubScreen()" style="background:none;border:1px solid #444;color:#aaa;font-size:13px;padding:6px 14px;border-radius:8px;cursor:pointer;">← 戻る</button>
+    <div style="flex:1;text-align:center;font-size:14px;color:#d4a017;font-weight:900;letter-spacing:2px;">SE操作</div>
+  </div>
+  <div style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px;">
+    <span style="font-size:12px;color:#aaa;">🎵 マスター:</span>
+    <span id="sub-master-label" style="font-size:12px;color:#888;">なし</span>
+    <button onclick="window.becomeMaster()" style="margin-left:auto;background:#1a2a1a;border:1px solid #44aa44;color:#88ff88;font-size:12px;padding:6px 16px;border-radius:8px;cursor:pointer;">マスターになる</button>
+  </div>
+  <div style="width:100%;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+    <button id="sub-laugh-btn-1" onclick="window.triggerSE('laugh_1')" style="background:#2a0a2a;border:2px solid #aa44aa;color:#ff88ff;font-size:18px;font-weight:900;padding:24px;border-radius:14px;cursor:pointer;">笑い1</button>
+    <button id="sub-laugh-btn-2" onclick="window.triggerSE('laugh_2')" style="background:#2a0a2a;border:2px solid #aa44aa;color:#ff88ff;font-size:18px;font-weight:900;padding:24px;border-radius:14px;cursor:pointer;">笑い2</button>
+    <button id="sub-laugh-btn-3" onclick="window.triggerSE('laugh_3')" style="background:#2a0a2a;border:2px solid #aa44aa;color:#ff88ff;font-size:18px;font-weight:900;padding:24px;border-radius:14px;cursor:pointer;">笑い3</button>
+    <button id="sub-laugh-btn-4" onclick="window.triggerSE('laugh_4')" style="background:#2a0a2a;border:2px solid #aa44aa;color:#ff88ff;font-size:18px;font-weight:900;padding:24px;border-radius:14px;cursor:pointer;">笑い4</button>
+    <button id="sub-se-cheer-btn" onclick="window.triggerSE('se_cheer')" style="background:#1a1a3a;border:2px solid #4444aa;color:#8888ff;font-size:18px;font-weight:900;padding:24px;border-radius:14px;cursor:pointer;">歓声</button>
+    <button id="sub-se-clap-btn" onclick="window.triggerSE('se_clap')" style="background:#1a1a3a;border:2px solid #4444aa;color:#8888ff;font-size:18px;font-weight:900;padding:24px;border-radius:14px;cursor:pointer;">拍手</button>
+  </div>
 </div>
 
 <script>
@@ -784,6 +836,37 @@ document.addEventListener('fullscreenchange', () => {
     document.getElementById('fullscreen-btn-host').style.display = '';
   }
 });
+
+// サブ画面
+const playerNames = ['WAKUSHIMA','AGATA','TOKUMOTO','AOKI','SAGAWA'];
+function buildResultGrid() {
+  const grid = document.getElementById('result-score-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  playerNames.forEach((name, i) => {
+    const pi = 4 - i;
+    const cell = document.createElement('div');
+    cell.style.cssText = 'background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:8px;';
+    cell.innerHTML = `
+      <div style="font-size:11px;color:#aaa;font-weight:900;">${name}</div>
+      <div id="sub-score-${pi}" style="font-size:28px;font-weight:900;color:#f5c400;">0</div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="window.changeScore(${pi},1)" style="background:#1a3a1a;border:1px solid #44aa44;color:#88ff88;font-size:20px;width:44px;height:44px;border-radius:8px;cursor:pointer;">＋</button>
+        <button onclick="window.changeScore(${pi},-1)" style="background:#3a1a1a;border:1px solid #aa4444;color:#ff8888;font-size:20px;width:44px;height:44px;border-radius:8px;cursor:pointer;">－</button>
+      </div>`;
+    grid.appendChild(cell);
+  });
+}
+
+window.showSubScreen = (type) => {
+  document.getElementById('sub-result').style.display = type === 'result' ? 'flex' : 'none';
+  document.getElementById('sub-se').style.display = type === 'se' ? 'flex' : 'none';
+  if (type === 'result') buildResultGrid();
+};
+window.hideSubScreen = () => {
+  document.getElementById('sub-result').style.display = 'none';
+  document.getElementById('sub-se').style.display = 'none';
+};
 </script>
 </body>
 </html>

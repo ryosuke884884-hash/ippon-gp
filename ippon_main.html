@@ -665,6 +665,20 @@ document.addEventListener('DOMContentLoaded', function() {
     ipponImg.style.cssText = 'position:absolute;top:0;left:0;width:100vw;height:100vh;object-fit:fill;display:none;z-index:30;';
     document.body.appendChild(ipponImg);
   }
+
+  // ロード時の初期化: 残像をクリアして待機画像を表示
+  document.getElementById('odai-img').style.display = 'none';
+  [1,2,3,4,5,6].forEach(function(n) {
+    var el = document.getElementById('odai-img-' + n);
+    if (el) el.style.display = 'none';
+  });
+  hideKekkaImg();
+  hideScoreImg();
+  const taikiImgInit = document.getElementById('taiki-img');
+  if (images['taiki']) {
+    taikiImgInit.src = images['taiki'];
+    taikiImgInit.style.display = 'block';
+  }
 });
 
 onValue(ref(db, 'odai'), (snapshot) => {

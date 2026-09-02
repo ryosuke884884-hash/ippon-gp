@@ -578,6 +578,18 @@ onValue(ref(db, 'se_master'), (snapshot) => {
 // SEトリガー監視（マスターのみ再生）
 onValue(ref(db, 'se_trigger'), (snapshot) => {
   const data = snapshot.val();
+
+  // ボタンUIを全端末で同期
+  Object.keys(seBtnMap).forEach(k => {
+    const btn = document.getElementById(seBtnMap[k]);
+    if (btn) btn.classList.remove('playing');
+  });
+  if (data && data.action === 'play') {
+    const btn = document.getElementById(seBtnMap[data.key]);
+    if (btn) btn.classList.add('playing');
+  }
+
+  // マスターのみ音を再生
   if (!data || !isMaster) return;
   const { key, action } = data;
   const audio = seAudioMap[key];
@@ -587,42 +599,16 @@ onValue(ref(db, 'se_trigger'), (snapshot) => {
   if (action === 'stop') {
     audio.pause();
     audio.currentTime = 0;
-    const btn = document.getElementById(btnId);
-    if (btn) { btn.classList.remove('playing'); }
     currentSEKey = null;
   } else {
-    // 他のSEを止める
     if (currentSEKey && currentSEKey !== key) {
       const prev = seAudioMap[currentSEKey];
-      const prevBtn = document.getElementById(seBtnMap[currentSEKey]);
       if (prev) { prev.pause(); prev.currentTime = 0; }
-      if (prevBtn) prevBtn.classList.remove('playing');
     }
     currentSEKey = key;
     audio.volume = masterVolume;
     audio.play().catch(() => {});
-    const btn = document.getElementById(btnId);
-    if (btn) {
-      btn.classList.add('playing');
-      audio.onended = () => {
-        btn.classList.remove('playing');
-        currentSEKey = null;
-      };
-    }
-  }
-});
-
-// ボタンのUIをSEトリガーで全端末に反映
-onValue(ref(db, 'se_trigger'), (snapshot) => {
-  const data = snapshot.val();
-  // ボタン状態を全端末で同期
-  Object.keys(seBtnMap).forEach(k => {
-    const btn = document.getElementById(seBtnMap[k]);
-    if (btn) btn.classList.remove('playing');
-  });
-  if (data && data.action === 'play') {
-    const btn = document.getElementById(seBtnMap[data.key]);
-    if (btn) btn.classList.add('playing');
+    audio.onended = () => { currentSEKey = null; };
   }
 });
 // ===== SE Firebase経由 ここまで =====

@@ -142,6 +142,16 @@ function genId() {
   return Math.random().toString(36).substr(2,6).toUpperCase();
 }
 
+async function setHighBitrate(pc) {
+  const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
+  if (!sender) return;
+  const params = sender.getParameters();
+  if (!params.encodings) params.encodings = [{}];
+  params.encodings[0].maxBitrate = 8000000; // 8Mbps
+  params.encodings[0].maxFramerate = 30;
+  try { await sender.setParameters(params); } catch(e) {}
+}
+
 window.startCamera = async function() {
   document.getElementById('start-screen').style.display = 'none';
   document.getElementById('status').textContent = 'カメラ起動中…';
@@ -173,7 +183,13 @@ window.startCamera = async function() {
     dc.on('data', msg => {
       if (msg.startsWith('join:')) {
         const viewerId = msg.replace('join:', '');
-        peer.call(viewerId, stream);
+        const call = peer.call(viewerId, stream);
+        // ビットレートを上げる
+        call.on('stream', () => {});
+        call.peerConnection && setHighBitrate(call.peerConnection);
+        call.on('iceStateChanged', () => {
+          if (call.peerConnection) setHighBitrate(call.peerConnection);
+        });
       }
     });
   });

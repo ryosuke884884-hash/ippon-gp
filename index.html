@@ -100,12 +100,12 @@ header {
     <div class="spacer"></div>
     <div class="open-btn">OPEN →</div>
   </div>
-  <div class="card host" onclick="window.open('https://ryosuke884884-hash.github.io/ippon-gp/ippon_host.html','_blank')">
+  <div class="card host" onclick="document.getElementById('modal-host').classList.add('show')">
     <div class="card-tag">CONTROL</div>
     <div class="card-name">HOST</div>
     <div class="card-desc">司会・進行操作 PCで開く</div>
     <div class="spacer"></div>
-    <div class="open-btn">OPEN →</div>
+    <div class="open-btn">QR / OPEN →</div>
   </div>
   <div class="card judge" onclick="document.getElementById('modal-judge').classList.add('show')">
     <div class="card-tag">VOTING</div>
@@ -128,6 +128,15 @@ header {
   <a class="movie-btn" href="https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/movie%2Fopmovie_v4.00.mp4?alt=media&token=465547aa-dc4a-4617-b5ca-c96524638286" target="_blank">▶ OP MOVIE</a>
 </div>
 
+<div class="modal-bg" id="modal-host" onclick="this.classList.remove('show')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>HOST</h2>
+    <div id="qr-host"></div>
+    <a class="modal-open" href="https://ryosuke884884-hash.github.io/ippon-gp/ippon_host.html" target="_blank">OPEN →</a>
+    <div class="modal-close" onclick="document.getElementById('modal-host').classList.remove('show')">閉じる</div>
+  </div>
+</div>
+
 <div class="modal-bg" id="modal-judge" onclick="this.classList.remove('show')">
   <div class="modal" onclick="event.stopPropagation()">
     <h2>JUDGE</h2>
@@ -147,6 +156,11 @@ header {
 </div>
 
 <script>
+new QRCode(document.getElementById('qr-host'), {
+  text: 'https://ryosuke884884-hash.github.io/ippon-gp/ippon_host.html',
+  width: 200, height: 200, colorDark: '#1a0033', colorLight: '#ffffff',
+  correctLevel: QRCode.CorrectLevel.M
+});
 new QRCode(document.getElementById('qr-judge'), {
   text: 'https://ryosuke884884-hash.github.io/ippon-gp/ippon_judge.html',
   width: 200, height: 200, colorDark: '#1a0033', colorLight: '#ffffff',

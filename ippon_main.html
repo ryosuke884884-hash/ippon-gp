@@ -236,7 +236,7 @@ body { background: #000; display: flex; align-items: center; justify-content: ce
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+import { getDatabase, ref, onValue, remove, get } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 
 // ===== PeerJS カメラ受信 =====
 let cameraPeer = null;
@@ -517,8 +517,16 @@ onValue(ref(db, 'agenda'), (snapshot) => {
       if (url.includes('winner')) startConfetti(confettiLayer);
     }
   } else {
-    // agendaがnullになったとき（停止）は完全停止
-    agendaVideo.pause(); agendaVideo.style.display = 'none'; agendaVideo.src = '';
+    // agendaがnullになったとき
+    get(ref(db, 'keep_audio')).then(snap => {
+      if (snap.val()) {
+        // 採点モード切り替えなど: 映像だけ隠して音は継続
+        agendaVideo.style.display = 'none';
+      } else {
+        // 完全停止
+        agendaVideo.pause(); agendaVideo.style.display = 'none'; agendaVideo.src = '';
+      }
+    });
     document.getElementById('agenda-img').style.display = 'none';
     stopConfetti(confettiLayer);
   }

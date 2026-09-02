@@ -431,6 +431,7 @@ window.showTaiki = () => {
   prevVoteCount = 0;
 };
 window.hideOdai = () => {
+  set(ref(db, 'keep_audio'), true);
   remove(ref(db, 'agenda'));
   remove(ref(db, 'answer_text'));
   remove(ref(db, 'odai'));
@@ -439,6 +440,7 @@ window.hideOdai = () => {
   remove(ref(db, 'revealed'));
   set(ref(db, 'mode'), 'saiten');
   prevVoteCount = 0;
+  setTimeout(() => remove(ref(db, 'keep_audio')), 2000);
 };
 window.showScoreboard = () => {
   remove(ref(db, 'agenda'));

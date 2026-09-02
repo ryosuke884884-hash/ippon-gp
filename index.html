@@ -17,34 +17,32 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 32px;
+  gap: 20px;
 }
-header { text-align: center; }
-.logo {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 36px;
-  color: #1a0033;
-  letter-spacing: 3px;
-}
-.logo span { color: #cc00ff; }
-.tagline { font-size: 10px; color: #aaa; letter-spacing: 4px; font-weight: 700; margin-top: 2px; }
-
-.grid {
+header {
   display: flex;
-  gap: 16px;
+  align-items: center;
+  gap: 12px;
+  width: 860px;
 }
+.logo { font-family: 'Bebas Neue', sans-serif; font-size: 32px; color: #1a0033; letter-spacing: 2px; }
+.logo span { color: #cc00ff; }
+.tagline { font-size: 10px; color: #aaa; letter-spacing: 3px; font-weight: 700; }
+.settings-btn {
+  margin-left: auto; color: #bbb; text-decoration: none;
+  display: flex; align-items: center; padding: 6px;
+  border-radius: 8px; transition: color 0.15s;
+}
+.settings-btn:hover { color: #cc00ff; }
+
+.grid { display: flex; gap: 16px; }
 
 .card {
-  width: 200px;
-  height: 200px;
-  border-radius: 24px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  cursor: pointer;
-  transition: transform 0.15s;
-  position: relative;
-  overflow: hidden;
+  width: 200px; height: 200px;
+  border-radius: 24px; padding: 20px;
+  display: flex; flex-direction: column;
+  cursor: pointer; transition: transform 0.15s;
+  position: relative; overflow: hidden;
 }
 .card:hover { transform: scale(1.04); }
 .card.main   { background: linear-gradient(150deg, #cc00ff, #7700cc); color: white; }
@@ -55,55 +53,30 @@ header { text-align: center; }
 .card-tag { font-size: 9px; font-weight: 900; letter-spacing: 3px; opacity: 0.6; }
 .card-name { font-family: 'Bebas Neue', sans-serif; font-size: 40px; letter-spacing: 2px; line-height: 1; margin-top: 2px; }
 .card-desc { font-size: 10px; opacity: 0.7; font-weight: 700; margin-top: 4px; line-height: 1.4; }
-
 .spacer { flex: 1; }
-
-.open-btn {
-  font-size: 11px; font-weight: 900; letter-spacing: 1px;
-  padding: 3px 12px; border-radius: 50px;
-  display: inline-block; width: fit-content;
-}
+.open-btn { font-size: 11px; font-weight: 900; letter-spacing: 1px; padding: 3px 12px; border-radius: 50px; display: inline-block; width: fit-content; }
 .card.main   .open-btn { background: rgba(255,255,255,0.22); color: white; }
 .card.host   .open-btn { background: rgba(255,255,255,0.22); color: white; }
 .card.judge  .open-btn { background: #cc00ff; color: white; }
 .card.camera .open-btn { background: rgba(255,255,255,0.22); color: white; }
 
-/* QRモーダル */
-.qr-hint { font-size: 9px; opacity: 0.6; font-weight: 700; margin-top: 6px; }
-
-.modal-bg {
-  display: none;
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.5);
-  align-items: center; justify-content: center;
-  z-index: 100;
-}
-.modal-bg.show { display: flex; }
-.modal {
-  background: white;
-  border-radius: 20px;
-  padding: 28px;
-  display: flex; flex-direction: column; align-items: center; gap: 16px;
-}
-.modal h2 { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 2px; color: #1a0033; }
-.modal-close {
-  font-size: 12px; color: #888; cursor: pointer; text-decoration: underline;
-}
-.modal-open {
-  background: #cc00ff; color: white;
-  padding: 8px 24px; border-radius: 50px;
-  font-size: 13px; font-weight: 900;
+.movie-btns { display: flex; gap: 12px; width: 860px; }
+.movie-btn {
+  flex: 1; text-align: center; padding: 10px;
+  background: #1a0033; border: 1px solid #cc00ff;
+  border-radius: 12px; color: #cc00ff;
+  font-size: 12px; font-weight: 900;
   text-decoration: none; letter-spacing: 1px;
 }
+.movie-btn:hover { background: #2a0044; }
 
-.settings-btn {
-  position: fixed; top: 16px; right: 20px;
-  color: #bbb; text-decoration: none;
-  display: flex; align-items: center;
-  padding: 6px; border-radius: 8px;
-  transition: color 0.15s;
-}
-.settings-btn:hover { color: #cc00ff; }
+/* モーダル */
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 100; }
+.modal-bg.show { display: flex; }
+.modal { background: white; border-radius: 20px; padding: 28px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.modal h2 { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 2px; color: #1a0033; }
+.modal-close { font-size: 12px; color: #888; cursor: pointer; text-decoration: underline; }
+.modal-open { background: #cc00ff; color: white; padding: 8px 24px; border-radius: 50px; font-size: 13px; font-weight: 900; text-decoration: none; letter-spacing: 1px; }
 </style>
 </head>
 <body>
@@ -111,10 +84,15 @@ header { text-align: center; }
 <header>
   <div class="logo">SONG <span>OGIRI</span> GRAND PRIX</div>
   <div class="tagline">ADMIN PANEL</div>
+  <a href="https://github.com/ryosuke884884-hash/ippon-gp/upload/main" target="_blank" class="settings-btn">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+  </a>
 </header>
 
 <div class="grid">
-
   <div class="card main" onclick="window.open('https://ryosuke884884-hash.github.io/ippon-gp/ippon_main_v0_21.html','_blank')">
     <div class="card-tag">DISPLAY</div>
     <div class="card-name">MAIN</div>
@@ -122,7 +100,6 @@ header { text-align: center; }
     <div class="spacer"></div>
     <div class="open-btn">OPEN →</div>
   </div>
-
   <div class="card host" onclick="window.open('https://ryosuke884884-hash.github.io/ippon-gp/ippon_host_v0_21.html','_blank')">
     <div class="card-tag">CONTROL</div>
     <div class="card-name">HOST</div>
@@ -130,7 +107,6 @@ header { text-align: center; }
     <div class="spacer"></div>
     <div class="open-btn">OPEN →</div>
   </div>
-
   <div class="card judge" onclick="document.getElementById('modal-judge').classList.add('show')">
     <div class="card-tag">VOTING</div>
     <div class="card-name">JUDGE</div>
@@ -138,7 +114,6 @@ header { text-align: center; }
     <div class="spacer"></div>
     <div class="open-btn">QR / OPEN →</div>
   </div>
-
   <div class="card camera" onclick="document.getElementById('modal-camera').classList.add('show')">
     <div class="card-tag">CAMERA</div>
     <div class="card-name">CAM</div>
@@ -146,10 +121,13 @@ header { text-align: center; }
     <div class="spacer"></div>
     <div class="open-btn">QR / OPEN →</div>
   </div>
-
 </div>
 
-<!-- JUDGE モーダル -->
+<div class="movie-btns">
+  <a class="movie-btn" href="https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/movie%2Fopcomment_v3.00.mp4?alt=media&token=2dc68617-2b14-4d26-b08f-ca91dc423c01" target="_blank">▶ OP COMMENT</a>
+  <a class="movie-btn" href="https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/movie%2Fopmovie_v4.00.mp4?alt=media&token=465547aa-dc4a-4617-b5ca-c96524638286" target="_blank">▶ OP MOVIE</a>
+</div>
+
 <div class="modal-bg" id="modal-judge" onclick="this.classList.remove('show')">
   <div class="modal" onclick="event.stopPropagation()">
     <h2>JUDGE</h2>
@@ -159,7 +137,6 @@ header { text-align: center; }
   </div>
 </div>
 
-<!-- CAMERA モーダル -->
 <div class="modal-bg" id="modal-camera" onclick="this.classList.remove('show')">
   <div class="modal" onclick="event.stopPropagation()">
     <h2>CAMERA</h2>
@@ -169,27 +146,15 @@ header { text-align: center; }
   </div>
 </div>
 
-<div style="display:flex;gap:12px;margin-top:0;">
-  <a href="https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/movie%2Fopcomment_v3.00.mp4?alt=media&token=2dc68617-2b14-4d26-b08f-ca91dc423c01" target="_blank" style="flex:1;text-align:center;padding:10px;background:#1a0033;border:1px solid #cc00ff;border-radius:12px;color:#cc00ff;font-size:12px;font-weight:900;text-decoration:none;letter-spacing:1px;">▶ OP COMMENT</a>
-  <a href="https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/movie%2Fopmovie_v4.00.mp4?alt=media&token=465547aa-dc4a-4617-b5ca-c96524638286" target="_blank" style="flex:1;text-align:center;padding:10px;background:#1a0033;border:1px solid #cc00ff;border-radius:12px;color:#cc00ff;font-size:12px;font-weight:900;text-decoration:none;letter-spacing:1px;">▶ OP MOVIE</a>
-</div>
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="12" cy="12" r="3"/>
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-  </svg>
-</a>
-
 <script>
 new QRCode(document.getElementById('qr-judge'), {
   text: 'https://ryosuke884884-hash.github.io/ippon-gp/ippon_judge_v0_24.html',
-  width: 200, height: 200,
-  colorDark: '#1a0033', colorLight: '#ffffff',
+  width: 200, height: 200, colorDark: '#1a0033', colorLight: '#ffffff',
   correctLevel: QRCode.CorrectLevel.M
 });
 new QRCode(document.getElementById('qr-camera'), {
   text: 'https://ryosuke884884-hash.github.io/ippon-gp/ippon_camera.html',
-  width: 200, height: 200,
-  colorDark: '#003322', colorLight: '#ffffff',
+  width: 200, height: 200, colorDark: '#003322', colorLight: '#ffffff',
   correctLevel: QRCode.CorrectLevel.M
 });
 </script>

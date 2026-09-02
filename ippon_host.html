@@ -129,17 +129,21 @@ h1 { color: #f5c400; font-size: 14px; letter-spacing: 2px; margin-bottom: 6px; }
     <button class="btn" id="se-buzzer-btn-main" style="background:#0a1a2a;border:1px solid #0066aa;color:#88ccff;font-size:13px;" onclick="window.toggleAudio(window.agendaAudios['se_buzzer'], 'se-buzzer-btn-main')">🔔 終了ブザー</button>
   </div>
   <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;">
-    <button class="btn laugh-btn" id="laugh-btn-1" onclick="playLaugh(1)">笑い1</button>
-    <button class="btn laugh-btn" id="laugh-btn-2" onclick="playLaugh(2)">笑い2</button>
-    <button class="btn laugh-btn" id="laugh-btn-3" onclick="playLaugh(3)">笑い3</button>
-    <button class="btn laugh-btn" id="laugh-btn-4" onclick="playLaugh(4)">笑い4</button>
-    <button class="btn laugh-btn" id="se-cheer-btn" onclick="window.toggleAudio(window.agendaAudios['se_cheer'], 'se-cheer-btn')">歓声</button>
-    <button class="btn laugh-btn" id="se-clap-btn" onclick="window.toggleAudio(window.agendaAudios['se_clap'], 'se-clap-btn')">拍手</button>
+    <button class="btn laugh-btn" id="laugh-btn-1" onclick="triggerSE('laugh_1')">笑い1</button>
+    <button class="btn laugh-btn" id="laugh-btn-2" onclick="triggerSE('laugh_2')">笑い2</button>
+    <button class="btn laugh-btn" id="laugh-btn-3" onclick="triggerSE('laugh_3')">笑い3</button>
+    <button class="btn laugh-btn" id="laugh-btn-4" onclick="triggerSE('laugh_4')">笑い4</button>
+    <button class="btn laugh-btn" id="se-cheer-btn" onclick="triggerSE('se_cheer')">歓声</button>
+    <button class="btn laugh-btn" id="se-clap-btn" onclick="triggerSE('se_clap')">拍手</button>
   </div>
   <button class="btn" style="background:#1a0a2a;color:#888;border:1px solid #444;" onclick="resetScores()">スコアリセット</button>
 </div>
 
-<div id="vol-wrap">
+<div id="master-bar" style="width:94vw;margin:8px auto 4px;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:10px;">
+  <span style="font-size:11px;color:#aaa;">🎵 音マスター:</span>
+  <span id="master-label" style="font-size:11px;color:#888;">なし</span>
+  <button id="master-btn" onclick="window.becomeMaster()" style="background:#1a2a1a;border:1px solid #44aa44;color:#88ff88;font-size:11px;padding:3px 12px;border-radius:6px;cursor:pointer;margin-left:auto;">マスターになる</button>
+</div>
   <span style="font-size:18px;">🔈</span>
   <input id="vol-slider" type="range" min="0" max="100" value="100" oninput="setVolume(this.value)">
   <span id="vol-label">100%</span>
@@ -512,6 +516,114 @@ window.playShutsudai = () => toggleAudio(shutsudaiAudio, 'shutsudai-btn');
 window.playThinking = () => toggleAudio(thinkingAudio, 'thinking-btn');
 window.playOdai = (n) => toggleAudio(odaiAudios[n], 'odai-read-btn-' + n);
 window.playLaugh = (n) => toggleAudio(laughAudios[n], 'laugh-btn-' + n);
+
+// ===== SE Firebase経由（笑い・歓声・拍手）=====
+const myId = Math.random().toString(36).substr(2, 8);
+let isMaster = false;
+let currentSEKey = null;
+let currentSEAudio = null;
+
+const seAudioMap = {
+  laugh_1: laughAudios[1],
+  laugh_2: laughAudios[2],
+  laugh_3: laughAudios[3],
+  laugh_4: laughAudios[4],
+  se_cheer: agendaAudios['se_cheer'],
+  se_clap: agendaAudios['se_clap'],
+};
+
+const seBtnMap = {
+  laugh_1: 'laugh-btn-1',
+  laugh_2: 'laugh-btn-2',
+  laugh_3: 'laugh-btn-3',
+  laugh_4: 'laugh-btn-4',
+  se_cheer: 'se-cheer-btn',
+  se_clap: 'se-clap-btn',
+};
+
+window.becomeMaster = () => {
+  set(ref(db, 'se_master'), myId);
+};
+
+window.triggerSE = (key) => {
+  if (currentSEKey === key) {
+    // 停止
+    set(ref(db, 'se_trigger'), { key, action: 'stop', ts: Date.now() });
+  } else {
+    // 再生
+    set(ref(db, 'se_trigger'), { key, action: 'play', ts: Date.now() });
+  }
+};
+
+// マスター監視
+onValue(ref(db, 'se_master'), (snapshot) => {
+  const masterId = snapshot.val();
+  isMaster = masterId === myId;
+  const label = document.getElementById('master-label');
+  const btn = document.getElementById('master-btn');
+  if (masterId) {
+    label.textContent = isMaster ? '自分 ✓' : '他の端末';
+    label.style.color = isMaster ? '#88ff88' : '#ff8888';
+    btn.textContent = isMaster ? 'マスター中' : 'マスターになる（上書き）';
+    btn.style.borderColor = isMaster ? '#44aa44' : '#aa4444';
+  } else {
+    label.textContent = 'なし';
+    label.style.color = '#888';
+    btn.textContent = 'マスターになる';
+  }
+});
+
+// SEトリガー監視（マスターのみ再生）
+onValue(ref(db, 'se_trigger'), (snapshot) => {
+  const data = snapshot.val();
+  if (!data || !isMaster) return;
+  const { key, action } = data;
+  const audio = seAudioMap[key];
+  const btnId = seBtnMap[key];
+  if (!audio || !btnId) return;
+
+  if (action === 'stop') {
+    audio.pause();
+    audio.currentTime = 0;
+    const btn = document.getElementById(btnId);
+    if (btn) { btn.classList.remove('playing'); }
+    currentSEKey = null;
+  } else {
+    // 他のSEを止める
+    if (currentSEKey && currentSEKey !== key) {
+      const prev = seAudioMap[currentSEKey];
+      const prevBtn = document.getElementById(seBtnMap[currentSEKey]);
+      if (prev) { prev.pause(); prev.currentTime = 0; }
+      if (prevBtn) prevBtn.classList.remove('playing');
+    }
+    currentSEKey = key;
+    audio.volume = masterVolume;
+    audio.play().catch(() => {});
+    const btn = document.getElementById(btnId);
+    if (btn) {
+      btn.classList.add('playing');
+      audio.onended = () => {
+        btn.classList.remove('playing');
+        currentSEKey = null;
+      };
+    }
+  }
+});
+
+// ボタンのUIをSEトリガーで全端末に反映
+onValue(ref(db, 'se_trigger'), (snapshot) => {
+  const data = snapshot.val();
+  // ボタン状態を全端末で同期
+  Object.keys(seBtnMap).forEach(k => {
+    const btn = document.getElementById(seBtnMap[k]);
+    if (btn) btn.classList.remove('playing');
+  });
+  if (data && data.action === 'play') {
+    const btn = document.getElementById(seBtnMap[data.key]);
+    if (btn) btn.classList.add('playing');
+  }
+});
+// ===== SE Firebase経由 ここまで =====
 
 const AGENDA_URLS = {
   op_comment:'https://firebasestorage.googleapis.com/v0/b/song-fes-ippon-gp.firebasestorage.app/o/movie%2Fopcomment_v3.00.mp4?alt=media&token=2dc68617-2b14-4d26-b08f-ca91dc423c01',

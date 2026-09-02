@@ -8,7 +8,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: #000; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; position: relative; }
 [data-netlify-badge], a[href*="netlify.com"] { display: none !important; }
-#score-img { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 1; }
+#score-img { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; object-position: center 52%; z-index: 1; }
 #taiki-img { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: fill; display: none; z-index: 10; }
 #odai-img { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: fill; display: none; z-index: 20; }
 #score-badge { position: absolute; bottom: 13vh; left: 8vw; width: auto; height: 40vh; display: none; z-index: 30; }
@@ -627,7 +627,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var img = document.createElement('img');
     img.src = url;
     img.id = 'score-img-' + n;
-    img.style.cssText = 'position:absolute;top:0;left:0;width:100vw;height:100vh;object-fit:cover;display:none;z-index:1;';
+    img.style.cssText = 'position:absolute;top:0;left:0;width:100vw;height:100vh;object-fit:cover;object-position:center 52%;display:none;z-index:1;';
     document.body.appendChild(img);
   });
 
